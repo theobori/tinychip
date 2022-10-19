@@ -13,11 +13,11 @@ use crate::models::{
 use crate::error::ChipError;
 
 /// Main structure that will contains almost everything
-pub struct Chip {
+pub struct Emulator {
     graphic: Box<dyn Graphic>
 }
 
-impl Chip {
+impl Emulator {
     pub fn new<T: Into<Box<dyn Graphic>>>(graphic_api: T) -> Self {
         Self {
             graphic: graphic_api.into()
@@ -55,13 +55,13 @@ impl Chip {
     }
 }
 
-impl Core for Chip {
+impl Core for Emulator {
     fn run(&mut self) {
         todo!()
     }
 }
 
-impl Memory for Chip {
+impl Memory for Emulator {
     fn write_any(&mut self, bytes: Vec<u8>, index: u32) {
         todo!()
     }
