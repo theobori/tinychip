@@ -1,4 +1,8 @@
-/// Memory, read, write and other basic operations
+// Public traits
+
+/// Used for manipulate a memory buffer, write, read, etc..
 pub mod memory;
-/// CPU, interpreting instructions
-pub mod cpu;
+/// Kernel
+pub mod core;
+/// Graphic API
+pub mod graphic;
