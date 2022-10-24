@@ -1,45 +1,397 @@
+use sdl2::Sdl;
+use sdl2::mouse::MouseButton;
+use sdl2::video::Window;
+use sdl2::{pixels::Color, render::Canvas, rect::Rect};
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
+
+use std::collections::HashMap;
+
 use crate::{
     models::graphic::Graphic,
     event::{
         Hotkey,
-        Mouse
+        MouseClick,
+        Mouse,
+        Input
     },
     properties::{
         rectangle::Rectangle,
-        color::Color
+        color
     }
 };
 
+/// SDL2 implementation
 pub struct SdlGraphic {
-
+    sdl_context: Sdl,
+    canvas: Canvas<Window>,
+    is_open: bool,
+    key_pressed: HashMap<sdl2::keyboard::Keycode, bool>
 }
 
 impl SdlGraphic {
-
+    pub fn new(title: String, w: u32, h: u32) -> Self {
+        let sdl_context = sdl2::init().unwrap();
+        let video_subsystem = sdl_context.video().unwrap();
+    
+        let window = video_subsystem.window(&title, w, h)
+            .position_centered()
+            .resizable()
+            .build()
+            .unwrap();
+    
+        // Init window
+        let canvas = window
+            .into_canvas()
+            .build()
+            .unwrap();
+        
+        Self {
+            sdl_context,
+            canvas,
+            is_open: true,
+            key_pressed: HashMap::new()
+        }
+    }
 }
 
 impl Graphic for SdlGraphic {
-    fn init(&mut self, title: String, w: u32, h: u32) {
-        todo!()
-    }
-
     fn clear(&mut self) {
-        todo!()
+        self.canvas.clear();
     }
 
-    fn hotkeys(&self) -> Vec<Hotkey> {
-        todo!()
-    }
-
-    fn mouse(&self) -> Vec<Mouse> {
-        todo!()
-    }
-
-    fn draw_rect(&self, rect: Rectangle, color: Color) {
-        todo!()
+    fn draw_rect(&mut self, rect: Rectangle, color: color::Color) {
+        self.canvas.set_draw_color(color);
+        self.canvas.draw_rect(rect.into()).unwrap();
     }
 
     fn is_window_open(&self) -> bool {
-        todo!()
+        self.is_open
+    }
+
+    fn display(&mut self) {
+        self.canvas.present();
+    }
+
+    fn events(&mut self) -> Vec<Input> {
+        let mut inputs = Vec::<Input>::new();
+        let mut event_pump = self.sdl_context.event_pump().unwrap();
+
+        // Events handling
+        for event in event_pump.poll_iter() {
+            match event {
+                Event::Quit { .. } => self.is_open = false,
+
+                // Hotkeys pressed
+                Event::KeyDown { keycode, .. } => {
+                    if keycode.is_some() {
+                        let hotkey = keycode.unwrap();
+    
+                        self.key_pressed.insert(hotkey, true);
+                        // inputs.push(Input::Hotkey(hotkey.into()));
+                    }
+                },
+
+                // Hotkeys released
+                Event::KeyUp { keycode, .. } => {
+                    if keycode.is_some() {
+                        println!("released");
+                        self.key_pressed.insert(keycode.unwrap(), false);
+                    }
+                },
+
+                // Mouse buttons
+                Event::MouseButtonDown { mouse_btn, x, y, .. } => {
+                    let mouse = Mouse::new(mouse_btn, x, y);
+
+                    inputs.push(Input::Mouse(mouse));
+                },
+
+                _ => {}
+            }
+        }
+
+        // Add pressed hotkeys
+        for key_pressed in self.key_pressed.iter() {
+            if *key_pressed.1 == true {
+                let hotkey = Hotkey::from(*key_pressed.0);
+    
+                inputs.push(Input::Hotkey(hotkey));
+            }
+        }
+
+        inputs
+    }
+}
+
+impl From<Rectangle> for Rect {
+    fn from(r: Rectangle) -> Self {
+        Self::new(r.x as i32, r.y as i32, r.w, r.h)
+    }
+}
+
+impl From<color::Color> for Color {
+    fn from(c: color::Color) -> Self {
+        Self {
+            r: c.r,
+            g: c.g,
+            b: c.b,
+            a: c.a,
+        }
+    }
+}
+
+impl From<sdl2::keyboard::Keycode> for Hotkey {
+    fn from(keycode: sdl2::keyboard::Keycode) -> Self {
+        match keycode {
+            Keycode::Backspace => Self::Backspace,
+            Keycode::Tab => Self::Tab,
+            Keycode::Return => Self::Return,
+            Keycode::Escape => Self::Escape,
+            Keycode::Space => Self::Space,
+            Keycode::Exclaim => Self::Exclaim,
+            Keycode::Quotedbl => Self::Quotedbl,
+            Keycode::Hash => Self::Hash,
+            Keycode::Dollar => Self::Dollar,
+            Keycode::Percent => Self::Percent,
+            Keycode::Ampersand => Self::Ampersand,
+            Keycode::Quote => Self::Quote,
+            Keycode::LeftParen => Self::LeftParen,
+            Keycode::RightParen => Self::RightParen,
+            Keycode::Asterisk => Self::Asterisk,
+            Keycode::Plus => Self::Plus,
+            Keycode::Comma => Self::Comma,
+            Keycode::Minus => Self::Minus,
+            Keycode::Period => Self::Period,
+            Keycode::Slash => Self::Slash,
+            Keycode::Num0 => Self::Num0,
+            Keycode::Num1 => Self::Num1,
+            Keycode::Num2 => Self::Num2,
+            Keycode::Num3 => Self::Num3,
+            Keycode::Num4 => Self::Num4,
+            Keycode::Num5 => Self::Num5,
+            Keycode::Num6 => Self::Num6,
+            Keycode::Num7 => Self::Num7,
+            Keycode::Num8 => Self::Num8,
+            Keycode::Num9 => Self::Num9,
+            Keycode::Colon => Self::Colon,
+            Keycode::Semicolon => Self::Semicolon,
+            Keycode::Less => Self::Less,
+            Keycode::Equals => Self::Equals,
+            Keycode::Greater => Self::Greater,
+            Keycode::Question => Self::Question,
+            Keycode::At => Self::At,
+            Keycode::LeftBracket => Self::LeftBracket,
+            Keycode::Backslash => Self::Backslash,
+            Keycode::RightBracket => Self::RightBracket,
+            Keycode::Caret => Self::Caret,
+            Keycode::Underscore => Self::Underscore,
+            Keycode::Backquote => Self::Backquote,
+            Keycode::A => Self::A,
+            Keycode::B => Self::B,
+            Keycode::C => Self::C,
+            Keycode::D => Self::D,
+            Keycode::E => Self::E,
+            Keycode::F => Self::F,
+            Keycode::G => Self::G,
+            Keycode::H => Self::H,
+            Keycode::I => Self::I,
+            Keycode::J => Self::J,
+            Keycode::K => Self::K,
+            Keycode::L => Self::L,
+            Keycode::M => Self::M,
+            Keycode::N => Self::N,
+            Keycode::O => Self::O,
+            Keycode::P => Self::P,
+            Keycode::Q => Self::Q,
+            Keycode::R => Self::R,
+            Keycode::S => Self::S,
+            Keycode::T => Self::T,
+            Keycode::U => Self::U,
+            Keycode::V => Self::V,
+            Keycode::W => Self::W,
+            Keycode::X => Self::X,
+            Keycode::Y => Self::Y,
+            Keycode::Z => Self::Z,
+            Keycode::Delete => Self::Delete,
+            Keycode::CapsLock => Self::CapsLock,
+            Keycode::F1 => Self::F1,
+            Keycode::F2 => Self::F2,
+            Keycode::F3 => Self::F3,
+            Keycode::F4 => Self::F4,
+            Keycode::F5 => Self::F5,
+            Keycode::F6 => Self::F6,
+            Keycode::F7 => Self::F7,
+            Keycode::F8 => Self::F8,
+            Keycode::F9 => Self::F9,
+            Keycode::F10 => Self::F10,
+            Keycode::F11 => Self::F11,
+            Keycode::F12 => Self::F12,
+            Keycode::PrintScreen => Self::PrintScreen,
+            Keycode::ScrollLock => Self::ScrollLock,
+            Keycode::Pause => Self::Pause,
+            Keycode::Insert => Self::Insert,
+            Keycode::Home => Self::Home,
+            Keycode::PageUp => Self::PageUp,
+            Keycode::End => Self::End,
+            Keycode::PageDown => Self::PageDown,
+            Keycode::Right => Self::Right,
+            Keycode::Left => Self::Left,
+            Keycode::Down => Self::Down,
+            Keycode::Up => Self::Up,
+            Keycode::NumLockClear => Self::NumLockClear,
+            Keycode::KpDivide => Self::KpDivide,
+            Keycode::KpMultiply => Self::KpMultiply,
+            Keycode::KpMinus => Self::KpMinus,
+            Keycode::KpPlus => Self::KpPlus,
+            Keycode::KpEnter => Self::KpEnter,
+            Keycode::Kp1 => Self::Kp1,
+            Keycode::Kp2 => Self::Kp2,
+            Keycode::Kp3 => Self::Kp3,
+            Keycode::Kp4 => Self::Kp4,
+            Keycode::Kp5 => Self::Kp5,
+            Keycode::Kp6 => Self::Kp6,
+            Keycode::Kp7 => Self::Kp7,
+            Keycode::Kp8 => Self::Kp8,
+            Keycode::Kp9 => Self::Kp9,
+            Keycode::Kp0 => Self::Kp0,
+            Keycode::KpPeriod => Self::KpPeriod,
+            Keycode::Application => Self::Application,
+            Keycode::Power => Self::Power,
+            Keycode::KpEquals => Self::KpEquals,
+            Keycode::F13 => Self::F13,
+            Keycode::F14 => Self::F14,
+            Keycode::F15 => Self::F15,
+            Keycode::F16 => Self::F16,
+            Keycode::F17 => Self::F17,
+            Keycode::F18 => Self::F18,
+            Keycode::F19 => Self::F19,
+            Keycode::F20 => Self::F20,
+            Keycode::F21 => Self::F21,
+            Keycode::F22 => Self::F22,
+            Keycode::F23 => Self::F23,
+            Keycode::F24 => Self::F24,
+            Keycode::Execute => Self::Execute,
+            Keycode::Help => Self::Help,
+            Keycode::Menu => Self::Menu,
+            Keycode::Select => Self::Select,
+            Keycode::Stop => Self::Stop,
+            Keycode::Again => Self::Again,
+            Keycode::Undo => Self::Undo,
+            Keycode::Cut => Self::Cut,
+            Keycode::Copy => Self::Copy,
+            Keycode::Paste => Self::Paste,
+            Keycode::Find => Self::Find,
+            Keycode::Mute => Self::Mute,
+            Keycode::VolumeUp => Self::VolumeUp,
+            Keycode::VolumeDown => Self::VolumeDown,
+            Keycode::KpComma => Self::KpComma,
+            Keycode::KpEqualsAS400 => Self::KpEqualsAS400,
+            Keycode::AltErase => Self::AltErase,
+            Keycode::Sysreq => Self::Sysreq,
+            Keycode::Cancel => Self::Cancel,
+            Keycode::Clear => Self::Clear,
+            Keycode::Prior => Self::Prior,
+            Keycode::Return2 => Self::Return2,
+            Keycode::Separator => Self::Separator,
+            Keycode::Out => Self::Out,
+            Keycode::Oper => Self::Oper,
+            Keycode::ClearAgain => Self::ClearAgain,
+            Keycode::CrSel => Self::CrSel,
+            Keycode::ExSel => Self::ExSel,
+            Keycode::Kp00 => Self::Kp00,
+            Keycode::Kp000 => Self::Kp000,
+            Keycode::ThousandsSeparator => Self::ThousandsSeparator,
+            Keycode::DecimalSeparator => Self::DecimalSeparator,
+            Keycode::CurrencyUnit => Self::CurrencyUnit,
+            Keycode::CurrencySubUnit => Self::CurrencySubUnit,
+            Keycode::KpLeftParen => Self::KpLeftParen,
+            Keycode::KpRightParen => Self::KpRightParen,
+            Keycode::KpLeftBrace => Self::KpLeftBrace,
+            Keycode::KpRightBrace => Self::KpRightBrace,
+            Keycode::KpTab => Self::KpTab,
+            Keycode::KpBackspace => Self::KpBackspace,
+            Keycode::KpA => Self::KpA,
+            Keycode::KpB => Self::KpB,
+            Keycode::KpC => Self::KpC,
+            Keycode::KpD => Self::KpD,
+            Keycode::KpE => Self::KpE,
+            Keycode::KpF => Self::KpF,
+            Keycode::KpXor => Self::KpXor,
+            Keycode::KpPower => Self::KpPower,
+            Keycode::KpPercent => Self::KpPercent,
+            Keycode::KpLess => Self::KpLess,
+            Keycode::KpGreater => Self::KpGreater,
+            Keycode::KpAmpersand => Self::KpAmpersand,
+            Keycode::KpDblAmpersand => Self::KpDblAmpersand,
+            Keycode::KpVerticalBar => Self::KpVerticalBar,
+            Keycode::KpDblVerticalBar => Self::KpDblVerticalBar,
+            Keycode::KpColon => Self::KpColon,
+            Keycode::KpHash => Self::KpHash,
+            Keycode::KpSpace => Self::KpSpace,
+            Keycode::KpAt => Self::KpAt,
+            Keycode::KpExclam => Self::KpExclam,
+            Keycode::KpMemStore => Self::KpMemStore,
+            Keycode::KpMemRecall => Self::KpMemRecall,
+            Keycode::KpMemClear => Self::KpMemClear,
+            Keycode::KpMemAdd => Self::KpMemAdd,
+            Keycode::KpMemSubtract => Self::KpMemSubtract,
+            Keycode::KpMemMultiply => Self::KpMemMultiply,
+            Keycode::KpMemDivide => Self::KpMemDivide,
+            Keycode::KpPlusMinus => Self::KpPlusMinus,
+            Keycode::KpClear => Self::KpClear,
+            Keycode::KpClearEntry => Self::KpClearEntry,
+            Keycode::KpBinary => Self::KpBinary,
+            Keycode::KpOctal => Self::KpOctal,
+            Keycode::KpDecimal => Self::KpDecimal,
+            Keycode::KpHexadecimal => Self::KpHexadecimal,
+            Keycode::LCtrl => Self::LCtrl,
+            Keycode::LShift => Self::LShift,
+            Keycode::LAlt => Self::LAlt,
+            Keycode::LGui => Self::LGui,
+            Keycode::RCtrl => Self::RCtrl,
+            Keycode::RShift => Self::RShift,
+            Keycode::RAlt => Self::RAlt,
+            Keycode::RGui => Self::RGui,
+            Keycode::Mode => Self::Mode,
+            Keycode::AudioNext => Self::AudioNext,
+            Keycode::AudioPrev => Self::AudioPrev,
+            Keycode::AudioStop => Self::AudioStop,
+            Keycode::AudioPlay => Self::AudioPlay,
+            Keycode::AudioMute => Self::AudioMute,
+            Keycode::MediaSelect => Self::MediaSelect,
+            Keycode::Www => Self::Www,
+            Keycode::Mail => Self::Mail,
+            Keycode::Calculator => Self::Calculator,
+            Keycode::Computer => Self::Computer,
+            Keycode::AcSearch => Self::AcSearch,
+            Keycode::AcHome => Self::AcHome,
+            Keycode::AcBack => Self::AcBack,
+            Keycode::AcForward => Self::AcForward,
+            Keycode::AcStop => Self::AcStop,
+            Keycode::AcRefresh => Self::AcRefresh,
+            Keycode::BrightnessDown => Self::BrightnessDown,
+            Keycode::BrightnessUp => Self::BrightnessUp,
+            Keycode::DisplaySwitch => Self::DisplaySwitch,
+            Keycode::KbdIllumToggle => Self::KbdIllumToggle,
+            Keycode::KbdIllumDown => Self::KbdIllumDown,
+            Keycode::KbdIllumUp => Self::KbdIllumUp,
+            Keycode::Eject => Self::Eject,
+            Keycode::Sleep => Self::Sleep,
+            Keycode::AcBookmarks => Self::AcBookmarks,
+        }
+    }
+}
+
+impl From<MouseButton> for MouseClick {
+    fn from(button: MouseButton) -> Self {
+        match button {
+            MouseButton::Unknown => Self::Unknown,
+            MouseButton::Left => Self::Left,
+            MouseButton::Middle => Self::Middle,
+            MouseButton::Right => Self::Right,
+            MouseButton::X1 => Self::Unknown,
+            MouseButton::X2 => Self::Unknown,
+        }
     }
 }

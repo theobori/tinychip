@@ -2,11 +2,13 @@
 pub mod models;
 /// key events
 pub mod event;
-/// Global struct that are used everywhere
+/// Global structs that are used almost everywhere
 pub mod properties;
 /// Emulator
-pub mod chip;
+pub mod emulator;
 /// Errors
 pub mod error;
-/// Graphic APIs
+/// Graphic API(s) implementations
 pub mod graphics;
+/// Interpreters implementations
+pub mod interpreters;

@@ -1,13 +1,13 @@
 /// Represent a rectangle (position + size)
 pub struct Rectangle {
     /// x-axis
-    x: u32,
+    pub x: u32,
     /// y-axis
-    y: u32,
+    pub y: u32,
     /// Width
-    w: u32,
+    pub w: u32,
     /// Height
-    h: u32
+    pub h: u32
 }
 
 impl From<(u32, u32, u32, u32)> for Rectangle {

@@ -1,8 +1,7 @@
 use crate::{
     models::graphic::Graphic,
     event::{
-        Hotkey,
-        Mouse
+        Input
     },
     properties::{
         rectangle::Rectangle,
@@ -19,27 +18,23 @@ impl SfmlGraphic {
 }
 
 impl Graphic for SfmlGraphic {
-    fn init(&mut self, title: String, w: u32, h: u32) {
-        todo!()
-    }
-
     fn clear(&mut self) {
         todo!()
     }
 
-    fn hotkeys(&self) -> Vec<Hotkey> {
-        todo!()
-    }
-
-    fn mouse(&self) -> Vec<Mouse> {
-        todo!()
-    }
-
-    fn draw_rect(&self, rect: Rectangle, color: Color) {
+    fn draw_rect(&mut self, rect: Rectangle, color: Color) {
         todo!()
     }
 
     fn is_window_open(&self) -> bool {
+        todo!()
+    }
+
+    fn display(&mut self) {
+        todo!()
+    }
+
+    fn events(&mut self) -> Vec<Input> {
         todo!()
     }
 }

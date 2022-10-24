@@ -6,3 +6,7 @@ pub mod memory;
 pub mod core;
 /// Graphic API
 pub mod graphic;
+/// Interpreter
+pub mod interpreter;
+/// CHIP8 instructions
+pub mod instructions;

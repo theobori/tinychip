@@ -6,4 +6,6 @@ pub enum ChipError {
     ReadFile(String),
     #[error("Unknown error")]
     Unknown,
+    #[error("Unable to load the program")]
+    LoadProgram,
 }
