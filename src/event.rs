@@ -265,7 +265,7 @@ impl Mouse {
 }
 
 /// Inputs
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum Input {
     Hotkey(Hotkey),
     Mouse(Mouse)

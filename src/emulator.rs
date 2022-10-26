@@ -6,72 +6,115 @@ use std::{
     time
 };
 
+use crate::interpreters::interpreter::ChipInterpreter;
 use crate::models::{
     core::Core,
-    memory::Memory,
-    graphic::Graphic
+    graphic::Graphic,
+    interpreter::Interpreter
+};
+use crate::graphics::api::{
+    GraphicProp,
+    Api,
+    RECT_W,
+    RECT_H,
+    WINDOW_MIN_W,
+    WINDOW_MIN_H
+};
+use crate::error::ChipError;
+use crate::properties::{
+    clock::Clock,
+    color::ColorPreset,
+    rectangle::Rectangle
 };
 
-use crate::graphics::api::GraphicType;
-use crate::error::ChipError;
-use crate::properties::clock::{Clock, ClockState};
+impl Default for EmulatorBuilder {
+    fn default() -> Self {
+        Self {
+            api_prop: GraphicProp {
+                api: Api::Sdl,
+                title: String::from("chip8"),
+                size: (WINDOW_MIN_W, WINDOW_MIN_H)
+            },
+            interpreter: Box::new(ChipInterpreter::new())
+        }
+    }
+}
 
-// impl Default for EmulatorBuilder {
-//     fn default() -> Self {
-//         let title = String::from("chip8");
+/// Build a `Emulator` struct
+pub struct EmulatorBuilder {
+    api_prop: GraphicProp,
+    interpreter: Box<dyn Interpreter>
+}
 
-//         Self {
-//             graphic_api: GraphicType::Sdl(title, 800, 600)
-//         }
-//     }
-// }
+impl EmulatorBuilder {
+    pub fn new() -> Self {
+        Self::default()
+    }
 
-// /// Build a `Emulator` struct
-// pub struct EmulatorBuilder {
-//     graphic_api: GraphicType
-// }
+    /// Set the api type
+    pub fn set_api(mut self, api_type: Api) -> Self {
+        self.api_prop.api = api_type;
 
-// impl EmulatorBuilder {
-//     pub fn new() -> Self {
-//         Self::default()
-//     }
+        self
+    }
 
-//     /// Set the api type
-//     pub fn set_api(mut self, api: GraphicType) -> Self {
-//         self.graphic_api = api;
+    /// Set the window title
+    pub fn set_window_title<S: Into<String>>(mut self, title: S) -> Self {
+        self.api_prop.title = title.into();
 
-//         self
-//     }
+        self
+    }
 
-//     /// Build the emulator
-//     pub fn build(self) -> Emulator {
-//         Emulator {
-//             graphic_api_type: self.graphic_api,
-//             graphic_api: None
-//         }
-//     }
-// }
+    /// Set the window size
+    pub fn set_window_size(mut self, size: (u32, u32)) -> Self {
+        self.api_prop.size = size;
+
+        self
+    }
+
+    /// Set the interpreter
+    pub fn set_interpreter(
+        mut self,
+        interpreter: Box<dyn Interpreter>
+    ) -> Self {
+        self.interpreter = interpreter;
+
+        self
+    }
+
+    /// Build the emulator
+    pub fn build(self) -> Emulator {
+        Emulator {
+            api: self.api_prop.into(),
+            interpreter: self.interpreter
+        }
+    }
+}
 
 /// Main structure that will contains almost everything
 pub struct Emulator {
-    /// Type of the graphic API
-    pub graphic_api_type: GraphicType,
-    graphic_api: Option<Box<dyn Graphic>>
+    /// Chip8 interpreter
+    interpreter: Box<dyn Interpreter>,
+    /// Graphical API
+    api: Box<dyn Graphic>
 }
 
 impl Emulator {
-    pub fn new(graphic_api_type: GraphicType) -> Self {
+    /// Create a `Emulator` struct
+    pub fn new(
+        api_prop: GraphicProp,
+        interpreter: Box<dyn Interpreter>
+    ) -> Self {
         Self {
-            graphic_api_type,
-            graphic_api: None
+            // graphic_api_type,
+            api: api_prop.into(),
+            interpreter
         }
     }
 
     /// Load program raw bytes
-    pub fn load<T: Into<Vec<u8>>>(&mut self, program: T) -> &mut Self {
-        // Call load from memory trait
-        
-        self
+    pub fn load<T: Into<Vec<u8>>>(&mut self, program: T) {
+        self.interpreter.load_program(program.into());
     }
 
     /// Load a program from file
@@ -96,37 +139,62 @@ impl Emulator {
             Err(e) => Err(ChipError::ReadFile(e.to_string()))
         }
     }
+
+    /// Display the screen throught the graphic API
+    fn display_screen(&mut self) {
+        let screen = self.interpreter.screen();
+        let wsize = self.api.window_size();
+        let (w, h) = (wsize.0 / RECT_W, wsize.1 / RECT_H);
+        
+        for (i, value) in screen.iter().enumerate() {
+            // Rectangle size
+            let x = ((i as u32 % RECT_W) * w) as i32;
+            let y = ((i as u32 / RECT_W) * h) as i32;
+            
+            // Rectangle properties
+            let rect = Rectangle::from((x, y, w, h));
+            let color = if value & 1 == 1 {
+                ColorPreset::White.into()
+            } else {
+                ColorPreset::Blue.into()
+            };
+
+            // Draw the rectangle
+            self.api.draw_rect(rect, color);
+        }
+    }
 }
 
 impl Core for Emulator {
     fn run(&mut self) {
-        let graphic_api = self.graphic_api.as_mut().unwrap();
-
         // Clocks
+        // TODO: clocks as struct properties
         let mut clock_event = Clock::new(50);
-        // let mut clock_update = Clock::new(50);
-        // let mut clock_display = Clock::new(50);
+        let mut clock_display = Clock::new(50);
+        let mut inputs = Vec::new();
 
-        while graphic_api.is_window_open() == true {
-            // Handling events
+        while self.api.is_window_open() == true {
+            // Handling events + get keyboard/mouse inputs
             if clock_event.try_reset() == true {
-                for input in graphic_api.events() {
+                inputs = self.api.events();
+        
+                for input in &inputs {
                     println!("{:?}", input);
                 }
             }
 
-            // Call cycle from the interpreter
+            // The interpreter calls the current instruction
+            self.interpreter.execute(inputs.clone());
             
-            // Display screen
-
+            // Clear and display screen
+            if clock_display.try_reset() == true {
+                self.api.clear();
+                self.display_screen();
+                self.api.display();
+            }
+            
             // Security program sleep
             thread::sleep(time::Duration::from_millis(10));
         }
-    }
-
-    fn init(&mut self) {
-        let t = self.graphic_api_type.clone();
-
-        self.graphic_api = Some(t.into());
     }
 }

@@ -84,7 +84,41 @@ impl Memory for ChipInterpreter {
 }
 
 impl Instructions for ChipInterpreter {
+    fn cls(&mut self) {
+        println!("cls");
 
+        self.pc += 2;
+    }
+
+    fn jp(&mut self) {
+        println!("jp");
+
+        self.pc += 2;
+    }
+
+    fn ld_vx(&mut self) {
+        println!("ld_vx");
+
+        self.pc += 2;
+    }
+
+    fn add_vx(&mut self) {
+        println!("add_vx");
+
+        self.pc += 2;
+    }
+
+    fn ld_i(&mut self) {
+        println!("ld_i");
+
+        self.pc += 2;
+    }
+
+    fn drw(&mut self) {
+        println!("drw");
+
+        self.pc += 2;
+    }
 }
 
 impl Interpreter for ChipInterpreter {
@@ -92,11 +126,23 @@ impl Interpreter for ChipInterpreter {
         self.screen
     }
 
-    fn cycle(&mut self, inputs: Vec::<Input>) {
-        // Load the font
+    fn execute(&mut self, inputs: Vec::<Input>) {
+        self.opcode = self.read_short(self.pc as usize);
 
-        // Get the opcode at self.pc
-        let opcode = self.read_byte(self.pc as usize);
+        match self.opcode & 0xf000 {
+            0x0000 => {
+                match self.opcode & 0x0fff {
+                    0x00e0 => self.cls(),
+                    _ => {}
+                }
+            },
+            0x1000 => self.jp(),
+            0x6000 => self.ld_vx(),
+            0x7000 => self.add_vx(),
+            0xa000 => self.ld_i(),
+            0xd000 => self.drw(),
+            _ => {}
+        };
     }
 
     fn load_program(&mut self, program: Vec::<u8>) {

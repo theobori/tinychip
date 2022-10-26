@@ -16,4 +16,6 @@ pub trait Graphic {
     fn display(&mut self);
     /// Return the pressed inputs
     fn events(&mut self) -> Vec<Input>;
+    /// Return the window size (width, height)
+    fn window_size(&self) -> (u32, u32);
 }

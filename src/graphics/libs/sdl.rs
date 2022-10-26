@@ -2,7 +2,7 @@ use sdl2::Sdl;
 use sdl2::mouse::MouseButton;
 use sdl2::video::Window;
 use sdl2::{pixels::Color, render::Canvas, rect::Rect};
-use sdl2::event::Event;
+use sdl2::event::{Event, WindowEvent};
 use sdl2::keyboard::Keycode;
 
 use std::collections::HashMap;
@@ -18,15 +18,27 @@ use crate::{
     properties::{
         rectangle::Rectangle,
         color
+    },
+    graphics::api::{
+        WINDOW_MAX_H,
+        WINDOW_MAX_W,
+        WINDOW_MIN_H,
+        WINDOW_MIN_W
     }
 };
 
 /// SDL2 implementation
 pub struct SdlGraphic {
+    /// SDL context
     sdl_context: Sdl,
+    /// Interacting with the window
     canvas: Canvas<Window>,
+    /// Used to keep the window open
     is_open: bool,
-    key_pressed: HashMap<sdl2::keyboard::Keycode, bool>
+    /// Used to handle multiple pressed keys continously
+    key_pressed: HashMap<sdl2::keyboard::Keycode, bool>,
+    /// Window size
+    window_size: (u32, u32)
 }
 
 impl SdlGraphic {
@@ -34,11 +46,15 @@ impl SdlGraphic {
         let sdl_context = sdl2::init().unwrap();
         let video_subsystem = sdl_context.video().unwrap();
     
-        let window = video_subsystem.window(&title, w, h)
+        let mut window = video_subsystem.window(&title, w, h)
             .position_centered()
             .resizable()
             .build()
             .unwrap();
+        
+        // Set window size limits
+        window.set_minimum_size(WINDOW_MIN_W, WINDOW_MIN_H).unwrap();
+        window.set_maximum_size(WINDOW_MAX_W, WINDOW_MAX_H).unwrap();
     
         // Init window
         let canvas = window
@@ -46,11 +62,15 @@ impl SdlGraphic {
             .build()
             .unwrap();
         
+        // Initial window size
+        let window_size = canvas.window().size();
+    
         Self {
             sdl_context,
             canvas,
             is_open: true,
-            key_pressed: HashMap::new()
+            key_pressed: HashMap::new(),
+            window_size
         }
     }
 }
@@ -61,8 +81,10 @@ impl Graphic for SdlGraphic {
     }
 
     fn draw_rect(&mut self, rect: Rectangle, color: color::Color) {
+        let filled = Some(rect.into());
+
         self.canvas.set_draw_color(color);
-        self.canvas.draw_rect(rect.into()).unwrap();
+        self.canvas.fill_rect(filled).unwrap();
     }
 
     fn is_window_open(&self) -> bool {
@@ -85,18 +107,27 @@ impl Graphic for SdlGraphic {
                 // Hotkeys pressed
                 Event::KeyDown { keycode, .. } => {
                     if keycode.is_some() {
-                        let hotkey = keycode.unwrap();
-    
-                        self.key_pressed.insert(hotkey, true);
-                        // inputs.push(Input::Hotkey(hotkey.into()));
+                        self.key_pressed.insert(
+                            keycode.unwrap(),
+                            true
+                        );
                     }
                 },
 
                 // Hotkeys released
                 Event::KeyUp { keycode, .. } => {
                     if keycode.is_some() {
-                        println!("released");
-                        self.key_pressed.insert(keycode.unwrap(), false);
+                        self.key_pressed.insert(
+                            keycode.unwrap(),
+                            false
+                        );
+                    }
+                },
+
+                // Handle the window events
+                Event::Window { win_event, .. } => {
+                    if let WindowEvent::Resized(w, h) = win_event {
+                        self.window_size = (w as u32, h as u32);
                     }
                 },
 
@@ -112,9 +143,9 @@ impl Graphic for SdlGraphic {
         }
 
         // Add pressed hotkeys
-        for key_pressed in self.key_pressed.iter() {
-            if *key_pressed.1 == true {
-                let hotkey = Hotkey::from(*key_pressed.0);
+        for kp in self.key_pressed.iter() {
+            if *kp.1 == true {
+                let hotkey = Hotkey::from(*kp.0);
     
                 inputs.push(Input::Hotkey(hotkey));
             }
@@ -122,11 +153,16 @@ impl Graphic for SdlGraphic {
 
         inputs
     }
+
+    fn window_size(&self) -> (u32, u32) {
+        self.window_size
+    }
+
 }
 
 impl From<Rectangle> for Rect {
     fn from(r: Rectangle) -> Self {
-        Self::new(r.x as i32, r.y as i32, r.w, r.h)
+        Self::new(r.x, r.y, r.w, r.h)
     }
 }
 
