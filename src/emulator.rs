@@ -15,8 +15,8 @@ use crate::models::{
 use crate::graphics::api::{
     GraphicProp,
     Api,
-    RECT_W,
-    RECT_H,
+    RECTS_X,
+    RECTS_Y,
     WINDOW_MIN_W,
     WINDOW_MIN_H
 };
@@ -144,19 +144,22 @@ impl Emulator {
     fn display_screen(&mut self) {
         let screen = self.interpreter.screen();
         let wsize = self.api.window_size();
-        let (w, h) = (wsize.0 / RECT_W, wsize.1 / RECT_H);
+        let (w, h) = (
+            wsize.0 as usize / screen.w(),
+            wsize.1 as usize / screen.h()
+        );
         
-        for (i, value) in screen.iter().enumerate() {
+        for (i, value) in screen.value().iter().enumerate() {
             // Rectangle size
-            let x = ((i as u32 % RECT_W) * w) as i32;
-            let y = ((i as u32 / RECT_W) * h) as i32;
+            let x = ((i % screen.w()) * w) as i32;
+            let y = ((i / screen.w()) * h) as i32;
             
             // Rectangle properties
-            let rect = Rectangle::from((x, y, w, h));
+            let rect = Rectangle::from((x, y, w as u32, h as u32));
             let color = if value & 1 == 1 {
                 ColorPreset::White.into()
             } else {
-                ColorPreset::Blue.into()
+                ColorPreset::Black.into()
             };
 
             // Draw the rectangle
@@ -184,7 +187,7 @@ impl Core for Emulator {
             }
 
             // The interpreter calls the current instruction
-            self.interpreter.execute(inputs.clone());
+            self.interpreter.step(inputs.clone());
             
             // Clear and display screen
             if clock_display.try_reset() == true {

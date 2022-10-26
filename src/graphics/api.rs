@@ -32,9 +32,9 @@ pub const WINDOW_MAX_H: u32 = 640;
 
 // Rectangles number on x and y axis
 /// X-axis
-pub const RECT_W: u32 = 64;
+pub const RECTS_X: u32 = 64;
 /// Y-axis
-pub const RECT_H: u32 = 32;
+pub const RECTS_Y: u32 = 32;
 
 impl From<GraphicProp> for Box<dyn Graphic> {
     fn from(prop: GraphicProp) -> Self {

@@ -16,7 +16,7 @@ It supports multiple graphical APIs
 
 Name           | Status
 -------------  |:-------------:
-IBM logo | ❌
+IBM logo | ✅
 Pong | ❌
 Space invaders | ❌
 Tetris | ❌
@@ -29,6 +29,7 @@ Name           | Status
 Basic instructions | ⚠️
 Handle CLI args **¹** | ⚠️
 Debug features **²** | ⚠️
+Create font | ⚠️
 
 **¹** CLI args:
 * Clock (optional)

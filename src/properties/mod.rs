@@ -4,3 +4,7 @@ pub mod rectangle;
 pub mod color;
 /// Clock
 pub mod clock;
+/// Opcode
+pub mod opcode;
+/// Screen
+pub mod screen;

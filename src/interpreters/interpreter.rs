@@ -3,8 +3,33 @@ use crate::{
         interpreter::Interpreter,
         memory::Memory,
         instructions::Instructions
-    }, event::Input
+    },
+    event::Input,
+    properties::{
+        opcode::Opcode,
+        screen::Screen
+    }
 };
+
+/// ChipInterpreter font
+const FONT: [u8; 5 * 16] = [
+    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+    0x20, 0x60, 0x20, 0x20, 0x70, // 1
+    0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+    0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+    0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+    0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+    0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+    0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+    0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+    0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+    0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+    0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+    0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+    0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+];
 
 /// First chip8 interpreter
 pub struct ChipInterpreter {
@@ -15,15 +40,17 @@ pub struct ChipInterpreter {
     /// 0x200-0xfff - Program ROM and RAM
     memory: [u8; 4096],
     /// Current opcode
-    opcode: u16,
+    opcode: Opcode,
     /// CPU Registers
     v: [u8; 16],
     /// Index register
     i: u16,
     /// Program count
     pc: u16,
+    /// Program count next value
+    pc_next: u16,
     /// Graphics
-    screen: [u8; 64 * 32],
+    screen: Screen,
     /// Delay timer
     delay_timer: u8,
     /// Sound timer
@@ -40,11 +67,12 @@ impl Default for ChipInterpreter {
     fn default() -> Self {
         Self {
             memory: [0; 4096],
-            opcode: 0x0000,
+            opcode: 0x0000.into(),
             v: [0; 16],
             i: 0,
             pc: 0x200,
-            screen: [0; 64 * 32],
+            pc_next: 0,
+            screen: Screen::default(),
             delay_timer: 0,
             sound_timer: 0,
             stack: [0; 16],
@@ -56,19 +84,36 @@ impl Default for ChipInterpreter {
 
 impl ChipInterpreter {
     pub fn new() -> Self {
-        Self::default()
+        let mut interpreter = Self::default();
+
+        // Load the font
+        interpreter.write_any(FONT.to_vec(), 0);
+        interpreter
+    }
+
+    /// Reset the pc next value
+    fn pc_next_reset(&mut self) {
+        self.pc_next = 0;
+    }
+
+    /// Set pc_next
+    fn set_pc_next(&mut self, value: u16) {
+        self.pc_next = value;
+    }
+
+    /// Update pc
+    fn update_pc(&mut self, inc: u16) {
+        if self.pc_next == 0 {
+            self.pc += inc;
+        } else {
+            self.pc = self.pc_next;
+        }
     }
 }
 
 impl Memory for ChipInterpreter {
     fn write_byte_at(&mut self, byte: u8, index: usize) {
         self.memory[index] = byte;
-    }
-
-    fn write_any(&mut self, bytes: Vec<u8>, index: usize) {
-        for i in 0..bytes.len() {
-            self.write_byte_at(bytes[i], index + i);
-        }
     }
 
     fn read_byte(&self, index: usize) -> u8 {
@@ -84,65 +129,85 @@ impl Memory for ChipInterpreter {
 }
 
 impl Instructions for ChipInterpreter {
-    fn cls(&mut self) {
-        println!("cls");
-
-        self.pc += 2;
+    fn cls(&mut self) {    
+        self.screen.clear();
     }
 
     fn jp(&mut self) {
-        println!("jp");
-
-        self.pc += 2;
+        self.set_pc_next(self.opcode.nnn());
     }
 
     fn ld_vx(&mut self) {
-        println!("ld_vx");
-
-        self.pc += 2;
+        self.v[self.opcode.x() as usize] = self.opcode.kk();
     }
 
     fn add_vx(&mut self) {
-        println!("add_vx");
+        let index = self.opcode.x() as usize;
+        let sum = self.v[index] as u16 + self.opcode.kk() as u16;
 
-        self.pc += 2;
+        // Lowest bits to avoid overflow
+        self.v[index] = (sum & 0x00ff) as u8;
     }
 
     fn ld_i(&mut self) {
-        println!("ld_i");
-
-        self.pc += 2;
+        self.i = self.opcode.nnn();
     }
 
     fn drw(&mut self) {
-        println!("drw");
+        self.v[0xf] = 0;
 
-        self.pc += 2;
+        for i in 0..self.opcode.n() {
+            let index = (self.i + i) as usize;
+            let byte = self.memory[index];
+            let y = self.v[self.opcode.y() as usize] + i as u8;
+            
+            for shift in 1..=7 {
+                let x = self.v[self.opcode.x() as usize] + shift;
+                let bit = byte >> (8 - shift) & 1;
+
+                // Xor sprite on the screen
+                if bit ^ self.screen.get(x, y) == 0 {
+                    self.screen.put(x, y, 0);
+                    self.v[0xf] = 1;
+                } else {
+                    self.screen.put(x, y, 1);
+                }
+            }
+        }
     }
 }
 
 impl Interpreter for ChipInterpreter {
-    fn screen(&mut self) -> [u8; 64 * 32] {
-        self.screen
+    fn screen(&self) -> Screen {
+        self.screen.clone()
     }
 
-    fn execute(&mut self, inputs: Vec::<Input>) {
-        self.opcode = self.read_short(self.pc as usize);
+    fn step(&mut self, inputs: Vec::<Input>) {
+        // Fetch
+        self.opcode = self.read_short(self.pc as usize).into();
 
-        match self.opcode & 0xf000 {
-            0x0000 => {
-                match self.opcode & 0x0fff {
+        let value = self.opcode.value;
+
+        // Reset the next program count
+        self.pc_next_reset();
+
+        // Execute
+        match (value & 0xf000) >> 12 {
+            0x0 => {
+                match value & 0x0fff {
                     0x00e0 => self.cls(),
                     _ => {}
                 }
             },
-            0x1000 => self.jp(),
-            0x6000 => self.ld_vx(),
-            0x7000 => self.add_vx(),
-            0xa000 => self.ld_i(),
-            0xd000 => self.drw(),
+            0x1 => self.jp(),
+            0x6 => self.ld_vx(),
+            0x7 => self.add_vx(),
+            0xa => self.ld_i(),
+            0xd => self.drw(),
             _ => {}
         };
+
+        self.update_pc(2);
     }
 
     fn load_program(&mut self, program: Vec::<u8>) {
