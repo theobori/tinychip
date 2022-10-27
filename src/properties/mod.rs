@@ -6,5 +6,5 @@ pub mod color;
 pub mod clock;
 /// Opcode
 pub mod opcode;
-/// Screen
-pub mod screen;
+/// Vram
+pub mod vram;

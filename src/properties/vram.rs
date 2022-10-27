@@ -1,11 +1,11 @@
-use crate::graphics::api::{
+use crate::apis::api::{
     RECTS_X,
     RECTS_Y
 };
 
 /// Manage the display memory as a matrice
 #[derive(Clone)]
-pub struct Screen {
+pub struct Vram {
     /// Array
     value: Vec::<u8>,
     /// Width
@@ -14,7 +14,7 @@ pub struct Screen {
     h: usize
 }
 
-impl Default for Screen {
+impl Default for Vram {
     fn default() -> Self {
         Self::new(
             RECTS_X as usize,
@@ -24,7 +24,7 @@ impl Default for Screen {
     }
 }
 
-impl Screen {
+impl Vram {
     pub fn new(w: usize, h: usize, byte: u8) -> Self {
         Self {
             value: vec![byte; w * h],

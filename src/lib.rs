@@ -9,6 +9,6 @@ pub mod emulator;
 /// Errors
 pub mod error;
 /// Graphic API(s) implementations
-pub mod graphics;
+pub mod apis;
 /// Interpreters implementations
 pub mod interpreters;

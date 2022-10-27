@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use toychip::{
     emulator::EmulatorBuilder,
-    graphics::api::{
+    apis::api::{
         Api,
         RECTS_X,
         RECTS_Y
@@ -36,7 +36,13 @@ struct Opt {
     interpreter: Option<InterpreterType>,
     /// Cycle(s) per second (Hz)
     #[structopt(long)]
-    cycles: Option<usize>
+    cycles: Option<usize>,
+    /// use the original semantic for fx55, fx65
+    #[structopt(long, parse(try_from_str), default_value = "false")]
+    original_load_semantic: bool,
+    /// use the original semantic for 8xy6, 8xye
+    #[structopt(long, parse(try_from_str), default_value = "false")]
+    original_shift_semantic: bool
 }
 
 impl Opt {
@@ -74,11 +80,16 @@ impl Opt {
 fn main() -> Result<(), ChipError> {
     let args = Opt::from_args();
 
+    let mut interpreter = args.interpreter();
+
+    interpreter.set_original_load(args.original_load_semantic);
+    interpreter.set_original_shift(args.original_shift_semantic);
+
     let mut emu = EmulatorBuilder::new()
         .set_api(args.api())
         .set_window_size(args.size())
         .set_window_title("chip8 emulator")
-        .set_interpreter(args.interpreter())
+        .set_interpreter(interpreter)
         .build();
 
     emu.load_from_file(args.rom)?;

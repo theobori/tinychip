@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::error::ChipError;
 use crate::models::graphic::Graphic;
-use crate::graphics::libs::{
+use crate::apis::libs::{
     sdl::SdlGraphic,
     sfml::SfmlGraphic
 };

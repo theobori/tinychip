@@ -12,17 +12,14 @@ use crate::models::{
     graphic::Graphic,
     interpreter::Interpreter
 };
-use crate::graphics::api::{
+use crate::apis::api::{
     GraphicProp,
     Api,
-    RECTS_X,
-    RECTS_Y,
     WINDOW_MIN_W,
     WINDOW_MIN_H
 };
 use crate::error::ChipError;
 use crate::properties::{
-    clock::Clock,
     color::ColorPreset,
     rectangle::Rectangle
 };
@@ -140,19 +137,19 @@ impl Emulator {
         }
     }
 
-    /// Display the screen throught the graphic API
-    fn display_screen(&mut self) {
-        let screen = self.interpreter.screen();
+    /// Draw the vram throught the graphical API
+    fn draw_vram(&mut self) {
+        let vram = self.interpreter.vram();
         let wsize = self.api.window_size();
         let (w, h) = (
-            wsize.0 as usize / screen.w(),
-            wsize.1 as usize / screen.h()
+            wsize.0 as usize / vram.w(),
+            wsize.1 as usize / vram.h()
         );
         
-        for (i, value) in screen.value().iter().enumerate() {
+        for (i, value) in vram.value().iter().enumerate() {
             // Rectangle size
-            let x = ((i % screen.w()) * w) as i32;
-            let y = ((i / screen.w()) * h) as i32;
+            let x = ((i % vram.w()) * w) as i32;
+            let y = ((i / vram.w()) * h) as i32;
             
             // Rectangle properties
             let rect = Rectangle::from((x, y, w as u32, h as u32));
@@ -170,34 +167,21 @@ impl Emulator {
 
 impl Core for Emulator {
     fn run(&mut self) {
-        // Clocks
-        // TODO: clocks as struct properties
-        let mut clock_event = Clock::new(50);
-        let mut clock_display = Clock::new(50);
-        let mut inputs = Vec::new();
+        let dur = time::Duration::from_millis(2);
 
         while self.api.is_window_open() == true {
-            // Handling events + get keyboard/mouse inputs
-            if clock_event.try_reset() == true {
-                inputs = self.api.events();
+            // Handling events + get keyboard / mouse inputs
+            let inputs = self.api.events();
         
-                for input in &inputs {
-                    println!("{:?}", input);
-                }
-            }
-
             // The interpreter calls the current instruction
-            self.interpreter.step(inputs.clone());
+            let display = self.interpreter.step(inputs);
             
-            // Clear and display screen
-            if clock_display.try_reset() == true {
-                self.api.clear();
-                self.display_screen();
+            if display == true {
+                self.draw_vram();
                 self.api.display();
             }
-            
-            // Security program sleep
-            thread::sleep(time::Duration::from_millis(10));
+
+            thread::sleep(dur);
         }
     }
 }

@@ -19,7 +19,7 @@ use crate::{
         rectangle::Rectangle,
         color
     },
-    graphics::api::{
+    apis::api::{
         WINDOW_MAX_H,
         WINDOW_MAX_W,
         WINDOW_MIN_H,

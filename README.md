@@ -30,12 +30,12 @@ In general throughout the documents there are two kinds of semantic for the load
 #### Semantics
 
 To use the original semantic, use the following flags:
-- Load : `--original-load-semantic`
-- Shift : `--original-shift-semantic`
+- Load : `--original-load-semantic=true`
+- Shift : `--original-shift-semantic=true`
 
 Opcode | Default | Original
 :-------------: | :---------: | :--------------:
-**8xy6** | Vx = Vx >> 1, Vf = carry | Vx = Vy >> 1, VF = carry
+**8xy6** | Vx = Vx >> 1, Vf = carry | Vx = Vy >> 1, Vf = carry
 **8xye** | Vx = Vx << 1, Vf = carry | Vx = Vy << 1, Vf = carry
 **fx55** | I = I + x + 1 | ❌
 **fx65** | I = I + x + 1 | ❌
@@ -50,7 +50,7 @@ Name           | Status
 -------------  | :-------------:
 500Hz clock | ⚠️
 Basic instructions | ✅
-Handle every CLI args **¹** | ❌
+Handle every CLI args **¹** | ✅
 Debug features **²** | ⚠️
 Create font | ✅
 

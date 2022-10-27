@@ -12,7 +12,7 @@ pub trait Graphic {
     fn draw_rect(&mut self, rect: Rectangle, color: Color);
     /// Return the window state
     fn is_window_open(&self) -> bool;
-    /// Display every drawing on the screen as a complete picture
+    /// Display the drawing on the screen as a complete picture
     fn display(&mut self);
     /// Return the pressed inputs
     fn events(&mut self) -> Vec<Input>;
