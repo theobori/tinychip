@@ -1,3 +1,6 @@
+use rand::{rngs::ThreadRng, Rng};
+
+
 use crate::{
     models::{
         interpreter::Interpreter,
@@ -8,14 +11,15 @@ use crate::{
     properties::{
         opcode::Opcode,
         screen::Screen
-    }
+    },
+    event::Hotkey
 };
 
 use crate::interpreters::pc::ProgramCount;
 
 use super::pc::ProgramCountState;
 
-/// ChipInterpreter font
+///   font
 const FONT: [u8; 5 * 16] = [
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -34,6 +38,13 @@ const FONT: [u8; 5 * 16] = [
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 ];
+
+/// Interpreter state
+#[derive(PartialEq)]
+pub enum InterpreterState {
+    Running,
+    WaitForKey
+}
 
 /// First chip8 interpreter
 pub struct ChipInterpreter {
@@ -60,9 +71,13 @@ pub struct ChipInterpreter {
     /// Stack
     stack: [u16; 16],
     /// Stack pointer
-    stack_point: u16,
+    sp: u16,
     /// Keys
-    key: [u8; 16]
+    key: [u8; 16],
+    /// Random Number Generator
+    rng: ThreadRng,
+    /// Interpreter state
+    state: InterpreterState
 }
 
 impl Default for ChipInterpreter {
@@ -77,8 +92,10 @@ impl Default for ChipInterpreter {
             delay_timer: 0,
             sound_timer: 0,
             stack: [0; 16],
-            stack_point: 0,
-            key: [0; 16]
+            sp: 0,
+            key: [0; 16],
+            rng: rand::thread_rng(),
+            state: InterpreterState::Running
         }
     }
 }
@@ -90,6 +107,41 @@ impl ChipInterpreter {
         // Load the font
         interpreter.write_any(FONT.to_vec(), 0);
         interpreter
+    }
+
+    /// CPU register at index `x`
+    fn vx(&self) -> u8 {
+        self.v[self.opcode.x() as usize]
+    }
+
+    /// CPU register at index `y`
+    fn vy(&self) -> u8 {
+        self.v[self.opcode.y() as usize]
+    }
+
+    /// Set the CPU register at index `x`
+    fn set_vx(&mut self, byte: u8) {
+        self.v[self.opcode.x() as usize] = byte;
+    }
+
+    /// Set the CPU register at index `y`
+    #[allow(dead_code)]
+    fn set_vy(&mut self, byte: u8) {
+        self.v[self.opcode.y() as usize] = byte;
+    }
+
+    /// Reset keys
+    fn reset_keys(&mut self) {
+        for i in 0..self.key.len() {
+            self.key[i] = 0;
+        }
+    }
+
+    /// Assign keyboard hotkeys to the CHIP8 hotkeys
+    fn assign_keys(&mut self, keys: Vec::<usize>) {
+        for index in keys {
+            self.key[index] = 1;
+        }
     }
 }
 
@@ -111,8 +163,20 @@ impl Memory for ChipInterpreter {
 }
 
 impl Instructions for ChipInterpreter {
+    fn sys(&mut self) {
+        self.jp();
+    }
+
     fn cls(&mut self) {    
         self.screen.clear();
+    }
+
+    fn ret(&mut self) {
+        let state = ProgramCountState::Jump(self.stack[0xf]);
+        
+        self.pc.set_state(state);
+        // Handle underflow ?
+        self.sp -= 1;
     }
 
     fn jp(&mut self) {
@@ -121,23 +185,139 @@ impl Instructions for ChipInterpreter {
         self.pc.set_state(state);
     }
 
-    fn ld_vx(&mut self) {
-        self.v[self.opcode.x() as usize] = self.opcode.kk();
+    fn call(&mut self) {
+        self.sp += 1;
+        self.stack[0xf] = self.pc.value;
+        
+        let state = ProgramCountState::Jump(self.opcode.nnn());
+        self.pc.set_state(state);
     }
 
-    fn add_vx(&mut self) {
-        let index = self.opcode.x() as usize;
-        let sum = self.v[index] as u16 + self.opcode.kk() as u16;
+    fn se_vx_byte(&mut self) {
+        if self.vx() == self.opcode.kk() {
+            self.pc.set_state(ProgramCountState::Skip);
+        }
+    }
+
+    fn sne_vx_byte(&mut self) {
+        if self.vx() != self.opcode.kk() {
+            self.pc.set_state(ProgramCountState::Skip);
+        }
+    }
+
+    fn se_vx_vy(&mut self) {
+        if self.vx() == self.vy() {
+            self.pc.set_state(ProgramCountState::Skip);
+        }
+    }
+
+    fn ld_vx_byte(&mut self) {
+        self.set_vx(self.opcode.kk());
+    }
+
+    fn add_vx_byte(&mut self) {
+        let sum = self.vx() as u16 + self.opcode.kk() as u16;
 
         // Lowest bits to avoid overflow
-        self.v[index] = (sum & 0x00ff) as u8;
+        self.set_vx((sum & 0x00ff) as u8);
+    }
+
+    fn ld_vx_vy(&mut self) {
+        self.set_vx(self.vy());
+    }
+
+    fn or_vx_vy(&mut self) {
+        self.set_vx(self.vx() | self.vy());
+    }
+
+    fn and_vx_vy(&mut self) {
+        self.set_vx(self.vx() & self.vy());
+    }
+
+    fn xor_vx_vy(&mut self) {
+        self.set_vx(self.vx() ^ self.vy());
+    }
+
+    fn add_vx_vy(&mut self) {
+        let sum = (self.vx() as u16) + (self.vy() as u16);
+
+        self.v[0xf] = (sum > 0xff) as u8;
+
+        // Lowest 8 bits
+        self.set_vx((sum & 0x00ff) as u8);
+    }
+
+    fn sub_vx_vy(&mut self) {
+        let vx = self.vx();
+        let vy = self.vy();
+        
+        if vx > vy {
+            self.v[0xf] = 1;
+            self.set_vx(vx - vy);
+        } else {
+            self.v[0xf] = 0;
+        }
+    }
+
+    fn shr_vx_vy(&mut self) {
+        let vx = self.v[self.opcode.x() as usize];
+
+        self.v[self.opcode.x() as usize] >>= 1;
+        self.v[0xf] = (vx & 1 == 1) as u8;
+    }
+
+    fn shr_vx_vy_original(&mut self) {
+
+    }
+
+    fn subn_vx_vy(&mut self) {
+        let vx = self.vx();
+        let vy = self.vy();
+        
+        if vy > vx {
+            self.v[0xf] = 1;
+            self.set_vx(vy - vx);
+        } else {
+            self.v[0xf] = 0;
+        }
+    }
+
+    fn shl_vx_vy(&mut self) {
+        let vx = self.vx();
+        let left_shift = (vx as u16) << 1;
+
+        // Lowest 8 bits
+        self.set_vx((left_shift & 0x00ff) as u8);
+        self.v[0xf] = (vx & 1 == 1) as u8;
+    }
+
+    fn shl_vx_vy_original(&mut self) {
+        
+    }
+
+    fn sne_vx_vy(&mut self) {
+        if self.vx() != self.vy() {
+            self.pc.set_state(ProgramCountState::Skip);
+        }
     }
 
     fn ld_i(&mut self) {
         self.i = self.opcode.nnn();
     }
 
-    fn drw(&mut self) {
+    fn jp_v(&mut self) {
+        let addr = self.opcode.nnn() + (self.v[0] as u16);
+
+        self.pc.set_state(ProgramCountState::Jump(addr));
+    }
+
+    fn rnd_vx_byte(&mut self) {
+        let byte = self.rng.gen_range(0..0xff) & self.opcode.kk();
+
+        self.set_vx(byte);
+    }
+
+    fn drw_vx_vy_n(&mut self) {
         self.v[0xf] = 0;
 
         for i in 0..self.opcode.n() {
@@ -159,6 +339,68 @@ impl Instructions for ChipInterpreter {
             }
         }
     }
+
+    fn skp_vx(&mut self) {
+        if self.key[self.vx() as usize] == 1 {
+            self.pc.set_state(ProgramCountState::Skip);
+        }
+    }
+
+    fn sknp_vx(&mut self) {
+        if self.key[self.vx() as usize] == 0 {
+            self.pc.set_state(ProgramCountState::Skip);
+        }
+    }
+
+    fn ld_vx_dt(&mut self) {
+        self.set_vx(self.delay_timer);
+    }
+
+    fn ld_vx_k(&mut self) {
+        self.state = InterpreterState::WaitForKey;
+    }
+
+    fn ld_dt_vx(&mut self) {
+        self.delay_timer = self.vx();
+    }
+
+    fn ld_st_vx(&mut self) {
+        self.sound_timer = self.vx();
+    }
+
+    fn add_i_vx(&mut self) {
+        self.i += self.vx() as u16;
+    }
+
+    fn ld_f_vx(&mut self) {
+        todo!()
+    }
+
+    fn ld_b_vx(&mut self) {
+        todo!()
+    }
+
+    fn ld_i_vx(&mut self) {
+        let bytes = self.v[0..(self.vx() as usize)].to_vec();
+
+        self.write_any(bytes, self.i as usize);
+    }
+
+    fn ld_i_vx_original(&mut self) {
+        todo!()
+    }
+
+    fn ld_vx_i(&mut self) {
+        for i in 0..(self.vx() as usize) {
+            let index = i + self.i as usize;
+
+            self.v[i] = self.read_byte(index);
+        }
+    }
+
+    fn ld_vx_i_original(&mut self) {
+        todo!()
+    }
 }
 
 impl Interpreter for ChipInterpreter {
@@ -167,14 +409,32 @@ impl Interpreter for ChipInterpreter {
     }
 
     fn step(&mut self, inputs: Vec::<Input>) {
-        // Fetch
+        // Fetch the operation code
         self.opcode = self.read_short(self.pc.value as usize).into();
 
         let value = self.opcode.value;
+        let keys = Input::to_keys(inputs);
 
+        // Listening for ld_vx_k (fx0a)
+        // aka (Hotkeys handling)
+        if self.state == InterpreterState::WaitForKey {
+            match keys.first() {
+                Some(value) => {
+                    self.set_vx(*value as u8);
+                    self.state = InterpreterState::Running;
+                },
+                None => return,
+            }
+        }
+
+        // Reset the program counter stat
         self.pc.reset_state();
 
-        // Execute
+        // Hotkeys handling
+        // self.reset_keys();
+        // self.assign_keys(keys);
+
+        // Execute the operation code
         match (value & 0xf000) >> 12 {
             0x0 => {
                 match value & 0x0fff {
@@ -183,13 +443,14 @@ impl Interpreter for ChipInterpreter {
                 }
             },
             0x1 => self.jp(),
-            0x6 => self.ld_vx(),
-            0x7 => self.add_vx(),
+            0x6 => self.ld_vx_byte(),
+            0x7 => self.add_vx_byte(),
             0xa => self.ld_i(),
-            0xd => self.drw(),
+            0xd => self.drw_vx_vy_n(),
             _ => {}
         };
 
+        // update the program counter
         self.pc.step();
     }
 

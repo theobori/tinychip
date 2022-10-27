@@ -28,10 +28,10 @@ struct Opt {
     /// Window height
     #[structopt(short, long)]
     height: Option<u32>,
-    /// Graphical API (sfml | sdl)
+    /// Graphical API, value(s): sfml, sdl
     #[structopt(long)]
     api: Option<Api>,
-    /// Interpreter (original)
+    /// Interpreter, value(s): original
     #[structopt(long)]
     interpreter: Option<InterpreterType>,
     /// Cycle(s) per second (Hz)

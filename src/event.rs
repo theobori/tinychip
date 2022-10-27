@@ -270,3 +270,49 @@ pub enum Input {
     Hotkey(Hotkey),
     Mouse(Mouse)
 }
+
+impl From<Input> for Option<usize> {
+    fn from(input: Input) -> Self {
+        let key_index = match input {
+            Input::Hotkey(key) => {
+                match key {
+                    Hotkey::Num0 | Hotkey::Kp0 => 0,
+                    Hotkey::Num1 | Hotkey::Kp1 => 1,
+                    Hotkey::Num2 | Hotkey::Kp2 => 2,
+                    Hotkey::Num3 | Hotkey::Kp3 => 3,
+                    Hotkey::Num4 | Hotkey::Kp4 => 4,
+                    Hotkey::Num5 | Hotkey::Kp5 => 5,
+                    Hotkey::Num6 | Hotkey::Kp6 => 6,
+                    Hotkey::Num7 | Hotkey::Kp7 => 7,
+                    Hotkey::Num8 | Hotkey::Kp8 => 8,
+                    Hotkey::Num9 | Hotkey::Kp9 => 9,
+                    Hotkey::A => 0xa,
+                    Hotkey::B => 0xb,
+                    Hotkey::C => 0xc,
+                    Hotkey::D => 0xd,
+                    Hotkey::E => 0xe,
+                    Hotkey::F => 0xf,
+                    _ => return None
+                }
+            },
+            Input::Mouse(_) => return None,
+        };
+
+        Some(key_index)
+    }
+}
+
+impl Input {
+    /// Convert a vector or `Input` into a vector of `usize`
+    pub fn to_keys(inputs: Vec<Input>) -> Vec<usize> {
+        let mut ret = Vec::new();
+
+        for input in inputs {
+            if let Some(value) = Option::<usize>::from(input) {
+                ret.push(value);
+            }
+        }
+
+        ret 
+    }
+}
