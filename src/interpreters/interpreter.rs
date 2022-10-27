@@ -19,26 +19,26 @@ use super::pc::{ProgramCountState, OPCODE_SIZE};
 
 /// Font
 const FONT: [u8; 5 * 16] = [
-    0x0f0, 0x90, 0x90, 0x90, 0x0f0, // 0
+    0xf0, 0x90, 0x90, 0x90, 0xf0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
-    0x0f0, 0x10, 0x0f0, 0x80, 0x0f0, // 2
-    0x0f0, 0x10, 0x0f0, 0x10, 0x0f0, // 3
-    0x90, 0x90, 0x0f0, 0x10, 0x10, // 4
-    0x0f0, 0x80, 0x0f0, 0x10, 0x0f0, // 5
-    0x0f0, 0x80, 0x0f0, 0x90, 0x0f0, // 6
-    0x0f0, 0x10, 0x20, 0x40, 0x40, // 7
-    0x0f0, 0x90, 0x0f0, 0x90, 0x0f0, // 8
-    0x0f0, 0x90, 0x0f0, 0x10, 0x0f0, // 9
-    0x0f0, 0x90, 0x0f0, 0x90, 0x90, // A
+    0xf0, 0x10, 0xf0, 0x80, 0xf0, // 2
+    0xf0, 0x10, 0xf0, 0x10, 0xf0, // 3
+    0x90, 0x90, 0xf0, 0x10, 0x10, // 4
+    0xf0, 0x80, 0xf0, 0x10, 0xf0, // 5
+    0xf0, 0x80, 0xf0, 0x90, 0xf0, // 6
+    0xf0, 0x10, 0x20, 0x40, 0x40, // 7
+    0xf0, 0x90, 0xf0, 0x90, 0xf0, // 8
+    0xf0, 0x90, 0xf0, 0x10, 0xf0, // 9
+    0xf0, 0x90, 0xf0, 0x90, 0x90, // A
     0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
-    0x0f0, 0x80, 0x80, 0x80, 0x0f0, // C
+    0xf0, 0x80, 0x80, 0x80, 0xf0, // C
     0xE0, 0x90, 0x90, 0x90, 0xE0, // D
-    0x0f0, 0x80, 0x0f0, 0x80, 0x0f0, // E
-    0x0f0, 0x80, 0x0f0, 0x80, 0x80  // F
+    0xf0, 0x80, 0xf0, 0x80, 0xf0, // E
+    0xf0, 0x80, 0xf0, 0x80, 0x80  // F
 ];
 
 /// Interpreter state
-#[derive(PartialEq)]
+#[derive(Debug, PartialEq)]
 pub enum InterpreterState {
     Running,
     WaitForKey
@@ -179,7 +179,6 @@ impl Instructions for ChipInterpreter {
 
     fn ret(&mut self) {
         self.sp -= 1;
-
         let state = ProgramCountState::Jump(self.stack[self.sp as usize]);
         
         self.pc.set_state(state);
@@ -226,7 +225,7 @@ impl Instructions for ChipInterpreter {
         let sum = self.vx() as u16 + self.opcode.kk() as u16;
 
         // Lowest bits to avoid overflow
-        self.set_vx((sum & 0x00ff) as u8);
+        self.set_vx((sum & 0xff) as u8);
     }
 
     fn ld_vx_vy(&mut self) {
@@ -248,10 +247,10 @@ impl Instructions for ChipInterpreter {
     fn add_vx_vy(&mut self) {
         let sum = (self.vx() as u16) + (self.vy() as u16);
 
-        self.v[0x0f] = (sum > 0x0ff) as u8;
+        self.v[0x0f] = (sum > 0xff) as u8;
 
         // Lowest 8 bits
-        self.set_vx((sum & 0x00ff) as u8);
+        self.set_vx((sum & 0xff) as u8);
     }
 
     fn sub_vx_vy(&mut self) {
@@ -331,22 +330,17 @@ impl Instructions for ChipInterpreter {
     fn drw_vx_vy_n(&mut self) {
         self.v[0x0f] = 0;
 
-        for i in 0..self.opcode.n() {
-            let index = (self.i + i as u16) as usize;
-            let byte = self.ram[index];
-            let y = (self.v[self.opcode.y() as usize] + i) % RECTS_Y as u8;
-            
-            for shift in 1..=7 {
-                let x = (self.v[self.opcode.x() as usize] + shift) % RECTS_X as u8;
-                let bit = byte >> (8 - shift) & 1;
-
-                // Xor sprite on the vram
-                if bit ^ self.vram.get(x, y) == 0 {
-                    self.vram.put(x, y, 0);
-                    self.v[0x0f] = 1;
-                } else {
-                    self.vram.put(x, y, 1);
-                }
+        for byte in 0..(self.opcode.n() as usize) {
+            let y = (self.vy() as usize + byte) % RECTS_Y as usize;
+            let value = self.read_byte(self.i as usize + byte);
+    
+            for bit in 0..8 {
+                let x = (self.vx() as usize + bit) % RECTS_X as usize;
+                let color = value >> (7 - bit) & 1;
+                let vram_byte = self.vram.get(x, y);
+        
+                self.v[0x0f] |= color & vram_byte;
+                self.vram.put(x, y, vram_byte ^ color);
             }
         }
 
@@ -443,12 +437,12 @@ impl Interpreter for ChipInterpreter {
     fn step(&mut self, inputs: Vec::<Input>) -> bool{
         let keys = Input::to_keys(inputs);
 
-        // Reset the program counter stat, keys and screen display state
+        // Reset the program counter stat and screen display state
         self.pc.reset_state();
-        self.reset_keys();
         self.display = false;
-
+        
         // Hotkeys handling
+        self.reset_keys();
         self.assign_keys(keys.clone());
 
         // Listening for ld_vx_k (fx0a)
@@ -457,10 +451,10 @@ impl Interpreter for ChipInterpreter {
             if let Some(value) = keys.first() {
                 self.set_vx(*value as u8);
                 self.state = InterpreterState::Running;
-            } else {
-                return self.display;
             }
+            return self.display;
         }
+
 
         if self.delay_timer > 0 {
             self.delay_timer -= 1;
@@ -481,35 +475,33 @@ impl Interpreter for ChipInterpreter {
             (0x02, _, _, _) => self.call(),
             (0x03, _, _, _) => self.se_vx_byte(),
             (0x04, _, _, _) => self.sne_vx_byte(),
-            (0x05, _, _, _) => self.se_vx_vy(),
+            (0x05, _, _, 0x00) => self.se_vx_vy(),
             (0x06, _, _, _) => self.ld_vx_byte(),
             (0x07, _, _, _) => self.add_vx_byte(),
+            (0x08, _, _, 0x00) => self.ld_vx_vy(),
             (0x08, _, _, 0x01) => self.or_vx_vy(),
             (0x08, _, _, 0x02) => self.and_vx_vy(),
             (0x08, _, _, 0x03) => self.xor_vx_vy(),
             (0x08, _, _, 0x04) => self.add_vx_vy(),
             (0x08, _, _, 0x05) => self.sub_vx_vy(),
-            // Missing original
             (0x08, _, _, 0x06) => self.shr_vx_vy(),
             (0x08, _, _, 0x07) => self.subn_vx_vy(),
-            // Missing original
             (0x08, _, _, 0x0e) => self.shl_vx_vy(),
-            (0x08, _, _, _) => self.ld_vx_vy(),
-            (0x09, _, _, _) => self.sne_vx_vy(),
+            (0x09, _, _, 0x00) => self.sne_vx_vy(),
             (0x0a, _, _, _) => self.ld_i(),
             (0x0b, _, _, _) => self.jp_v(),
             (0x0c, _, _, _) => self.rnd_vx_byte(),
             (0x0d, _, _, _) => self.drw_vx_vy_n(),
             (0x0e, _, 0x09, 0x0e) => self.skp_vx(),
             (0x0e, _, 0x0a, 0x01) => self.sknp_vx(),
+            (0x0f, _, 0x00, 0x07) => self.ld_vx_dt(),
             (0x0f, _, 0x01, 0x05) => self.ld_dt_vx(),
             (0x0f, _, 0x01, 0x08) => self.ld_st_vx(),
             (0x0f, _, 0x01, 0x0e) => self.add_i_vx(),
             (0x0f, _, 0x02, 0x09) => self.ld_f_vx(),
             (0x0f, _, 0x03, 0x03) => self.ld_b_vx(),
-            // Missing original
+            (0x0f, _, 0x00, 0x0a) => self.ld_vx_k(),
             (0x0f, _, 0x05, 0x05) => self.ld_i_vx(),
-            // Missing original
             (0x0f, _, 0x06, 0x05) => self.ld_vx_i(),
             (_, _, _, _) => {}
         }

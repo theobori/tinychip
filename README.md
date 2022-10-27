@@ -53,6 +53,7 @@ Basic instructions | ✅
 Handle every CLI args **¹** | ✅
 Debug features **²** | ⚠️
 Create font | ✅
+Add beep sound | ❌
 
 **¹** CLI args:
 * Clock (optional)
