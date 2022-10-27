@@ -1,3 +1,6 @@
+use std::str::FromStr;
+
+use crate::error::ChipError;
 use crate::models::graphic::Graphic;
 use crate::graphics::libs::{
     sdl::SdlGraphic,
@@ -5,10 +8,32 @@ use crate::graphics::libs::{
 };
 
 /// Public available implemented apis
-#[derive(Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum Api {
     Sdl,
     Sfml
+}
+
+impl Default for Api {
+    fn default() -> Self {
+        Self::Sdl
+    }
+}
+
+impl FromStr for Api {
+    type Err = ChipError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let api = match s {
+            "sdl" => Self::Sdl,
+            "sfml" => Self::Sfml,
+            _ => {
+                return Err(ChipError::UseApi);
+            }
+        };
+
+        Ok(api)
+    }
 }
 
 pub struct GraphicProp {

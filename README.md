@@ -1,4 +1,4 @@
-# chip8
+# toychip
 
 *CHIP-8 is an interpreted programming language, developed by Joseph Weisbecker made on his 1802 Microprocessor. It was initially used on the COSMAC VIP and Telmac 1800 8-bit microcomputers in the mid-1970s.* - *[Wikipedia](https://en.wikipedia.org/wiki/CHIP-8)*
 
@@ -10,7 +10,7 @@ It supports multiple graphical APIs
     - `cargo`
 2. Compile and install it
     - `cargo install --path .`
-3. Run `chip8 --help`
+3. Run `toychip --help`
 
 ## Tested programs
 
@@ -26,10 +26,10 @@ Tetris | ❌
 Name           | Status
 -------------  |:-------------:
 500Hz clock | ⚠️
-Basic instructions | ⚠️
-Handle CLI args **¹** | ⚠️
+Basic instructions | ✅
+Handle CLI args **¹** | ✅
 Debug features **²** | ⚠️
-Create font | ⚠️
+Create font | ✅
 
 **¹** CLI args:
 * Clock (optional)

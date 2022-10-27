@@ -11,6 +11,10 @@ use crate::{
     }
 };
 
+use crate::interpreters::pc::ProgramCount;
+
+use super::pc::ProgramCountState;
+
 /// ChipInterpreter font
 const FONT: [u8; 5 * 16] = [
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -46,9 +50,7 @@ pub struct ChipInterpreter {
     /// Index register
     i: u16,
     /// Program count
-    pc: u16,
-    /// Program count next value
-    pc_next: u16,
+    pc: ProgramCount,
     /// Graphics
     screen: Screen,
     /// Delay timer
@@ -70,8 +72,7 @@ impl Default for ChipInterpreter {
             opcode: 0x0000.into(),
             v: [0; 16],
             i: 0,
-            pc: 0x200,
-            pc_next: 0,
+            pc: ProgramCount::from(0x200),
             screen: Screen::default(),
             delay_timer: 0,
             sound_timer: 0,
@@ -89,25 +90,6 @@ impl ChipInterpreter {
         // Load the font
         interpreter.write_any(FONT.to_vec(), 0);
         interpreter
-    }
-
-    /// Reset the pc next value
-    fn pc_next_reset(&mut self) {
-        self.pc_next = 0;
-    }
-
-    /// Set pc_next
-    fn set_pc_next(&mut self, value: u16) {
-        self.pc_next = value;
-    }
-
-    /// Update pc
-    fn update_pc(&mut self, inc: u16) {
-        if self.pc_next == 0 {
-            self.pc += inc;
-        } else {
-            self.pc = self.pc_next;
-        }
     }
 }
 
@@ -134,7 +116,9 @@ impl Instructions for ChipInterpreter {
     }
 
     fn jp(&mut self) {
-        self.set_pc_next(self.opcode.nnn());
+        let state = ProgramCountState::Jump(self.opcode.nnn());
+
+        self.pc.set_state(state);
     }
 
     fn ld_vx(&mut self) {
@@ -184,12 +168,11 @@ impl Interpreter for ChipInterpreter {
 
     fn step(&mut self, inputs: Vec::<Input>) {
         // Fetch
-        self.opcode = self.read_short(self.pc as usize).into();
+        self.opcode = self.read_short(self.pc.value as usize).into();
 
         let value = self.opcode.value;
 
-        // Reset the next program count
-        self.pc_next_reset();
+        self.pc.reset_state();
 
         // Execute
         match (value & 0xf000) >> 12 {
@@ -207,7 +190,7 @@ impl Interpreter for ChipInterpreter {
             _ => {}
         };
 
-        self.update_pc(2);
+        self.pc.step();
     }
 
     fn load_program(&mut self, program: Vec::<u8>) {
