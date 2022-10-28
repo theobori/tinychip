@@ -78,7 +78,7 @@ Handle every CLI args **¹** | ✅
 Debug features **²** | ⚠️
 Create font | ✅
 Add beep sound | ✅
-60Hz delay and sound timers
+60Hz delay and sound timers | ✅
 
 **¹** CLI args:
 * Clock (optional)
