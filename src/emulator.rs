@@ -136,6 +136,35 @@ impl Emulator {
             Err(e) => Err(ChipError::ReadFile(e.to_string()))
         }
     }
+}
+
+impl Core for Emulator {
+    fn run(&mut self) {
+        let dur = time::Duration::from_micros(1_000_000 / self.clock);
+        let mut win_size = self.api.window_size();
+
+        while self.api.is_window_open() == true {
+            // Handling events + get keyboard / mouse inputs
+            let inputs = self.api.events();
+        
+            // The interpreter calls the current instruction
+            let display = self.interpreter.step(inputs);
+            let size_changed = self.api.window_size() != win_size;
+            
+            if display == true || size_changed == true {
+                self.draw_vram();
+                
+                if size_changed {
+                    win_size = self.api.window_size();
+                }
+                self.api.display();
+            }
+
+            self.try_beep();
+
+            thread::sleep(dur);
+        }
+    }
 
     /// Draw the vram throught the graphical API
     fn draw_vram(&mut self) {
@@ -163,37 +192,12 @@ impl Emulator {
             self.api.draw_rect(rect, color);
         }
     }
-}
 
-impl Core for Emulator {
-    fn run(&mut self) {
-        let dur = time::Duration::from_micros(1_000_000 / self.clock);
-        let mut win_size = self.api.window_size();
-
-        while self.api.is_window_open() == true {
-            // Handling events + get keyboard / mouse inputs
-            let inputs = self.api.events();
-        
-            // The interpreter calls the current instruction
-            let display = self.interpreter.step(inputs);
-            let size_changed = self.api.window_size() != win_size;
-            
-            if display == true || size_changed == true {
-                self.draw_vram();
-                
-                if size_changed {
-                    win_size = self.api.window_size();
-                }
-                self.api.display();
-            }
-
-            if self.interpreter.beep() == true {
-                self.api.resume_beep();
-            } else {
-                self.api.pause_beep();
-            }
-
-            thread::sleep(dur);
+    fn try_beep(&mut self) {
+        if self.interpreter.beep() == true {
+            self.api.resume_beep();
+        } else {
+            self.api.pause_beep();
         }
     }
 }

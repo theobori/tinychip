@@ -1,4 +1,4 @@
-use sdl2::{Sdl, AudioSubsystem};
+use sdl2::Sdl;
 use sdl2::mouse::MouseButton;
 use sdl2::video::Window;
 use sdl2::{pixels::Color, render::Canvas, rect::Rect};

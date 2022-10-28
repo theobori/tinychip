@@ -191,7 +191,7 @@ impl Instructions for ChipInterpreter {
     fn cls(&mut self) {    
         self.vram.clear();
 
-        // self.display = true;
+        self.display = true;
     }
 
     fn ret(&mut self) {
