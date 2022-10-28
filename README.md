@@ -17,9 +17,9 @@ It supports multiple graphical APIs
 Name           | Status
 -------------  | :-------------:
 IBM logo | ✅
-Pong | ❌
-Space invaders | ❌
-Tetris | ❌
+Pong | ✅
+Space invaders | ✅
+Tetris | ✅
 
 ## Compatibility
 
@@ -30,8 +30,8 @@ In general throughout the documents there are two kinds of semantic for the load
 #### Semantics
 
 To use the original semantic, use the following flags:
-- Load : `--original-load-semantic=true`
-- Shift : `--original-shift-semantic=true`
+- Load : `--original-load=true`
+- Shift : `--original-shift=true`
 
 Opcode | Default | Original
 :-------------: | :---------: | :--------------:
@@ -48,7 +48,7 @@ Some games where we know the best compatibility settings, [Github issue](https:/
 
 Name           | Status
 -------------  | :-------------:
-500Hz clock | ⚠️
+500Hz clock | ✅
 Basic instructions | ✅
 Handle every CLI args **¹** | ✅
 Debug features **²** | ⚠️
@@ -64,9 +64,8 @@ Add beep sound | ❌
 
 **²** Features:
 * Pause the game
-* Switch between a limited amount of stored emulation state
 * Show interpreter values like registers, pc, keys, etc..
-* Custom hotkeys
+* Switch between a limited amount of stored emulation state
 
 ## Documentation
 

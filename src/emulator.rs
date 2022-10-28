@@ -32,7 +32,8 @@ impl Default for EmulatorBuilder {
                 title: String::from("chip8"),
                 size: (WINDOW_MIN_W, WINDOW_MIN_H)
             },
-            interpreter: Box::new(ChipInterpreter::new())
+            interpreter: Box::new(ChipInterpreter::new()),
+            clock: 500
         }
     }
 }
@@ -40,7 +41,8 @@ impl Default for EmulatorBuilder {
 /// Build a `Emulator` struct
 pub struct EmulatorBuilder {
     api_prop: GraphicProp,
-    interpreter: Box<dyn Interpreter>
+    interpreter: Box<dyn Interpreter>,
+    clock: u64
 }
 
 impl EmulatorBuilder {
@@ -79,11 +81,19 @@ impl EmulatorBuilder {
         self
     }
 
+    /// Set the clock
+    pub fn set_clock(mut self, clock: u64) -> Self {
+        self.clock = clock;
+
+        self
+    }
+
     /// Build the emulator
     pub fn build(self) -> Emulator {
         Emulator {
             api: self.api_prop.into(),
-            interpreter: self.interpreter
+            interpreter: self.interpreter,
+            clock: self.clock
         }
     }
 }
@@ -93,22 +103,12 @@ pub struct Emulator {
     /// Chip8 interpreter
     interpreter: Box<dyn Interpreter>,
     /// Graphical API
-    api: Box<dyn Graphic>
+    api: Box<dyn Graphic>,
+    /// Cycles per second (hz)
+    pub clock: u64
 }
 
 impl Emulator {
-    /// Create a `Emulator` struct
-    pub fn new(
-        api_prop: GraphicProp,
-        interpreter: Box<dyn Interpreter>
-    ) -> Self {
-        Self {
-            // graphic_api_type,
-            api: api_prop.into(),
-            interpreter
-        }
-    }
-
     /// Load program raw bytes
     pub fn load<T: Into<Vec<u8>>>(&mut self, program: T) {
         self.interpreter.load_program(program.into());
@@ -167,7 +167,8 @@ impl Emulator {
 
 impl Core for Emulator {
     fn run(&mut self) {
-        let dur = time::Duration::from_millis(2);
+        let dur = time::Duration::from_micros(1_000_000 / self.clock);
+        let mut win_size = self.api.window_size();
 
         while self.api.is_window_open() == true {
             // Handling events + get keyboard / mouse inputs
@@ -175,9 +176,14 @@ impl Core for Emulator {
         
             // The interpreter calls the current instruction
             let display = self.interpreter.step(inputs);
+            let size_changed = self.api.window_size() != win_size;
             
-            if display == true {
+            if display == true || size_changed == true {
                 self.draw_vram();
+                
+                if size_changed {
+                    win_size = self.api.window_size();
+                }
                 self.api.display();
             }
 

@@ -174,7 +174,7 @@ impl Instructions for ChipInterpreter {
     fn cls(&mut self) {    
         self.vram.clear();
 
-        self.display = true;
+        // self.display = true;
     }
 
     fn ret(&mut self) {
@@ -437,7 +437,7 @@ impl Interpreter for ChipInterpreter {
     fn step(&mut self, inputs: Vec::<Input>) -> bool{
         let keys = Input::to_keys(inputs);
 
-        // Reset the program counter stat and screen display state
+        // Reset the program counter and screen display
         self.pc.reset_state();
         self.display = false;
         
@@ -446,7 +446,7 @@ impl Interpreter for ChipInterpreter {
         self.assign_keys(keys.clone());
 
         // Listening for ld_vx_k (fx0a)
-        // aka (Hotkeys handling)
+        // aka (Hotkeys halting)
         if self.state == InterpreterState::WaitForKey {
             if let Some(value) = keys.first() {
                 self.set_vx(*value as u8);
@@ -455,7 +455,7 @@ impl Interpreter for ChipInterpreter {
             return self.display;
         }
 
-
+        // Update timers
         if self.delay_timer > 0 {
             self.delay_timer -= 1;
         }
@@ -506,7 +506,7 @@ impl Interpreter for ChipInterpreter {
             (_, _, _, _) => {}
         }
 
-        // update the program counter
+        // Update the program counter
         self.pc.step();
         
         self.display

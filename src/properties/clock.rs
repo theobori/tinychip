@@ -18,7 +18,7 @@ pub struct Clock {
 impl Clock {
     pub fn new(millis: u64) -> Self {
         Self {
-            cooldown: time::Duration::from_millis(millis),
+            cooldown: time::Duration::from_micros(millis),
             instant: time::Instant::now()
         }
     }
@@ -44,8 +44,8 @@ impl Clock {
 
 impl PartialEq<ClockState> for Clock {
     fn eq(&self, state: &ClockState) -> bool {
-        let elapsed = self.instant.elapsed().as_millis();
-        let cooldown = self.cooldown.as_millis();
+        let elapsed = self.instant.elapsed().as_micros();
+        let cooldown = self.cooldown.as_micros();
 
         match state {
             ClockState::Finish => elapsed >= cooldown,

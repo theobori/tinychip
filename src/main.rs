@@ -36,13 +36,13 @@ struct Opt {
     interpreter: Option<InterpreterType>,
     /// Cycle(s) per second (Hz)
     #[structopt(long)]
-    cycles: Option<usize>,
+    cycles: Option<u64>,
     /// use the original semantic for fx55, fx65
-    #[structopt(long, parse(try_from_str), default_value = "false")]
-    original_load_semantic: bool,
+    #[structopt(long)]
+    original_load: Option<bool>,
     /// use the original semantic for 8xy6, 8xye
-    #[structopt(long, parse(try_from_str), default_value = "false")]
-    original_shift_semantic: bool
+    #[structopt(long)]
+    original_shift: Option<bool>
 }
 
 impl Opt {
@@ -72,8 +72,26 @@ impl Opt {
     }
 
     /// Return the interpreter
-    pub fn cycles(&self) -> usize {
-        self.cycles.unwrap_or(500)
+    pub fn cycles(&self) -> u64 {
+        let ret = self.cycles.unwrap_or(500);
+
+        if ret <= 500 {
+            500
+        } else if ret > 2000 {
+            2000
+        } else {
+            ret
+        }
+    }
+
+    /// Return original load state
+    pub fn original_load(&self) -> bool {
+        self.original_load.unwrap_or(false)
+    }
+
+    /// Return original shift state
+    pub fn original_shift(&self) -> bool {
+        self.original_shift.unwrap_or(false)
     }
 }
 
@@ -82,14 +100,15 @@ fn main() -> Result<(), ChipError> {
 
     let mut interpreter = args.interpreter();
 
-    interpreter.set_original_load(args.original_load_semantic);
-    interpreter.set_original_shift(args.original_shift_semantic);
+    interpreter.set_original_load(args.original_load());
+    interpreter.set_original_shift(args.original_shift());
 
     let mut emu = EmulatorBuilder::new()
         .set_api(args.api())
         .set_window_size(args.size())
-        .set_window_title("chip8 emulator")
+        .set_window_title("toychip")
         .set_interpreter(interpreter)
+        .set_clock(args.cycles())
         .build();
 
     emu.load_from_file(args.rom)?;
