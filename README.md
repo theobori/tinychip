@@ -22,6 +22,17 @@ Pong | ✅
 Space invaders | ✅
 Tetris | ✅
 
+## Screenshots
+
+#### Breakout (320x160 - 500hz)
+![breakout](img/breakout_320_160.png)
+
+#### Space Invaders (320x160 - 500hz)
+![space_invaders](img/space_invaders_320_160.png)
+
+#### IBM logo (640x320 - 500hz)
+![ibm_logo](img/ibm_logo_640_320.png)
+
 ## Compatibility
 
 Some descriptions of the chip8 instructions differ depending on the machine. For example, the instructions `8xy6` and `8xye` do not do the same thing according to the documents.
