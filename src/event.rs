@@ -276,22 +276,29 @@ impl From<Input> for Option<usize> {
         let key_index = match input {
             Input::Hotkey(key) => {
                 match key {
-                    Hotkey::Num0 | Hotkey::Kp0 => 0x00,
+                    // Line 1
                     Hotkey::Num1 | Hotkey::Kp1 => 0x01,
                     Hotkey::Num2 | Hotkey::Kp2 => 0x02,
                     Hotkey::Num3 | Hotkey::Kp3 => 0x03,
-                    Hotkey::Num4 | Hotkey::Kp4 => 0x04,
-                    Hotkey::Num5 | Hotkey::Kp5 => 0x05,
-                    Hotkey::Num6 | Hotkey::Kp6 => 0x06,
-                    Hotkey::Num7 | Hotkey::Kp7 => 0x07,
-                    Hotkey::Num8 | Hotkey::Kp8 => 0x08,
-                    Hotkey::Num9 | Hotkey::Kp9 => 0x09,
-                    Hotkey::A => 0x0a,
-                    Hotkey::B => 0x0b,
-                    Hotkey::C => 0x0c,
-                    Hotkey::D => 0x0d,
-                    Hotkey::E => 0x0e,
-                    Hotkey::F => 0x0f,
+                    Hotkey::Num4 | Hotkey::Kp4 => 0x0c,
+
+                    // Line 1
+                    Hotkey::A => 0x04,
+                    Hotkey::Z => 0x05,
+                    Hotkey::E => 0x06,
+                    Hotkey::R => 0x0d,
+                    
+                    // Line 3
+                    Hotkey::Q => 0x07,
+                    Hotkey::S => 0x08,
+                    Hotkey::D => 0x09,
+                    Hotkey::F => 0x0e,
+                    
+                    // Line 4
+                    Hotkey::W => 0x0a,
+                    Hotkey::X => 0x00,
+                    Hotkey::C => 0x0b,
+                    Hotkey::V => 0x0f,
                     _ => return None
                 }
             },

@@ -1,7 +1,7 @@
 use structopt::StructOpt;
 use std::path::PathBuf;
 
-use toychip::{
+use tinychip::{
     emulator::EmulatorBuilder,
     apis::api::{
         ApiKind,
@@ -106,7 +106,7 @@ fn main() -> Result<(), ChipError> {
     let mut emu = EmulatorBuilder::new()
         .set_api(args.api())
         .set_window_size(args.size())
-        .set_window_title("toychip")
+        .set_window_title("tinychip")
         .set_interpreter(interpreter)
         .set_clock(args.cycles())
         .build();

@@ -1,5 +1,5 @@
 [package]
-name = "toychip"
+name = "tinychip"
 version = "0.1.0"
 edition = "2021"
 

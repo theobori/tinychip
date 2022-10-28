@@ -1,4 +1,4 @@
-# toychip
+# tinychip
 
 *CHIP-8 is an interpreted programming language, developed by Joseph Weisbecker made on his 1802 Microprocessor. It was initially used on the COSMAC VIP and Telmac 1800 8-bit microcomputers in the mid-1970s.* - *[Wikipedia](https://en.wikipedia.org/wiki/CHIP-8)*
 
@@ -11,7 +11,7 @@ We consider an instruction ~= 1 cycle, so 500hz means it executes 500 instructio
     - `cargo`
 2. Compile and install it
     - `cargo install --path .`
-3. Run `toychip --help`
+3. Run `tinychip --help`
 
 ## Tested programs
 
@@ -32,6 +32,15 @@ Tetris | ✅
 
 #### IBM logo (640x320 - 500hz)
 ![ibm_logo](img/ibm_logo_640_320.png)
+
+## Corresponding hotkeys
+
+|   |   |   |   |
+|---|---|---|---|
+| **1** | **2** | **3** | **4** |
+| **A** | **Z** | **E** | **R** |
+| **Q** | **S** | **D** | **F** |
+| **W** | **X** | **C** | **V** |
 
 ## Compatibility
 
@@ -60,7 +69,7 @@ Some games where we know the best compatibility settings, [Github issue](https:/
 
 ```
 USAGE:
-    toychip [OPTIONS] <rom>
+    tinychip [OPTIONS] <rom>
 
 FLAGS:
         --help       Prints help information
