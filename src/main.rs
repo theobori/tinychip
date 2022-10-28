@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use toychip::{
     emulator::EmulatorBuilder,
     apis::api::{
-        Api,
+        ApiKind,
         RECTS_X,
         RECTS_Y
     },
@@ -30,7 +30,7 @@ struct Opt {
     height: Option<u32>,
     /// Graphical API, value(s): sfml, sdl
     #[structopt(long)]
-    api: Option<Api>,
+    api: Option<ApiKind>,
     /// Interpreter, value(s): original
     #[structopt(long)]
     interpreter: Option<InterpreterType>,
@@ -62,7 +62,7 @@ impl Opt {
     }
 
     /// Return the graphical api
-    pub fn api(&self) -> Api {
+    pub fn api(&self) -> ApiKind {
         self.api.unwrap_or_default()
     }
 

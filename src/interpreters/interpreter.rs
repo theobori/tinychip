@@ -8,7 +8,7 @@ use crate::{
     event::Input,
     properties::{
         opcode::Opcode,
-        vram::Vram
+        vram::Vram, clock::Clock
     },
     apis::api::{RECTS_X, RECTS_Y}
 };
@@ -80,6 +80,9 @@ pub struct ChipInterpreter {
     original_load: bool,
     /// Shift semantic
     original_shift: bool,
+    /// Timers clock
+    timers_clock: Clock
+
 }
 
 impl Default for ChipInterpreter {
@@ -99,7 +102,8 @@ impl Default for ChipInterpreter {
             state: InterpreterState::Running,
             display: false,
             original_load: false,
-            original_shift: false
+            original_shift: false,
+            timers_clock: Clock::new(1_000_000 / 60)
         }
     }
 }
@@ -145,6 +149,19 @@ impl ChipInterpreter {
     fn assign_keys(&mut self, keys: Vec::<usize>) {
         for index in keys {
             self.key[index] = 1;
+        }
+    }
+
+    fn timers_tick(&mut self) {
+        if self.timers_clock.try_reset() == false {
+            return
+        }
+
+        if self.delay_timer > 0 {
+            self.delay_timer -= 1;
+        }
+        if self.sound_timer > 0 {
+            self.sound_timer -= 1;
         }
     }
 }
@@ -455,13 +472,8 @@ impl Interpreter for ChipInterpreter {
             return self.display;
         }
 
-        // Update timers
-        if self.delay_timer > 0 {
-            self.delay_timer -= 1;
-        }
-        if self.sound_timer > 0 {
-            self.sound_timer -= 1;
-        }
+        // Upodate both timers
+        self.timers_tick();
 
         // Fetch the operation code
         self.opcode = self.read_short(self.pc.value as usize).into();

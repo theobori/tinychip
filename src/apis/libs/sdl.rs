@@ -1,14 +1,16 @@
-use sdl2::Sdl;
+use sdl2::{Sdl, AudioSubsystem};
 use sdl2::mouse::MouseButton;
 use sdl2::video::Window;
 use sdl2::{pixels::Color, render::Canvas, rect::Rect};
 use sdl2::event::{Event, WindowEvent};
 use sdl2::keyboard::Keycode;
+use sdl2::audio::{AudioCallback, AudioSpecDesired, AudioDevice};
 
 use std::collections::HashMap;
 
+use crate::models::audio::Audio;
 use crate::{
-    models::graphic::Graphic,
+    models::api::Api,
     event::{
         Hotkey,
         MouseClick,
@@ -27,10 +29,34 @@ use crate::{
     }
 };
 
+struct SquareWave {
+    phase_inc: f32,
+    phase: f32,
+    volume: f32
+}
+
+impl AudioCallback for SquareWave {
+    type Channel = f32;
+
+    fn callback(&mut self, out: &mut [f32]) {
+        // Generate a square wave
+        for x in out.iter_mut() {
+            *x = if self.phase <= 0.5 {
+                self.volume
+            } else {
+                -self.volume
+            };
+            self.phase = (self.phase + self.phase_inc) % 1.0;
+        }
+    }
+}
+
 /// SDL2 implementation
-pub struct SdlGraphic {
-    /// SDL context
-    sdl_context: Sdl,
+pub struct SdlApi {
+    /// Graphic context
+    context: Sdl,
+    /// Audio device
+    audio_device: AudioDevice<SquareWave>,
     /// Interacting with the window
     canvas: Canvas<Window>,
     /// Used to keep the window open
@@ -41,11 +67,12 @@ pub struct SdlGraphic {
     window_size: (u32, u32)
 }
 
-impl SdlGraphic {
+impl SdlApi {
     pub fn new(title: String, w: u32, h: u32) -> Self {
-        let sdl_context = sdl2::init().unwrap();
-        let video_subsystem = sdl_context.video().unwrap();
-    
+        let context = sdl2::init().unwrap();
+        let video_subsystem = context.video().unwrap();
+        
+        // Init window
         let mut window = video_subsystem.window(&title, w, h)
             .position_centered()
             .resizable()
@@ -56,26 +83,46 @@ impl SdlGraphic {
         window.set_minimum_size(WINDOW_MIN_W, WINDOW_MIN_H).unwrap();
         window.set_maximum_size(WINDOW_MAX_W, WINDOW_MAX_H).unwrap();
     
-        // Init window
         let canvas = window
             .into_canvas()
             .build()
             .unwrap();
         
-        // Initial window size
         let window_size = canvas.window().size();
+        let audio_device = SdlApi::build_audio(&context);
     
         Self {
-            sdl_context,
+            context,
+            audio_device,
             canvas,
             is_open: true,
             key_pressed: HashMap::new(),
             window_size
         }
     }
+
+    /// Init audio
+    fn build_audio(context: &Sdl) -> AudioDevice<SquareWave> {
+        let audio_subsystem = context.audio().unwrap();
+
+        let desired_spec = AudioSpecDesired {
+            freq: Some(44100),
+            channels: Some(1),  // mono
+            samples: None       // default sample size
+        };
+
+        audio_subsystem.open_playback(None, &desired_spec, |spec| {
+            // initialize the audio callback
+            SquareWave {
+                phase_inc: 440.0 / spec.freq as f32,
+                phase: 0.0,
+                volume: 0.25
+            }
+        }).unwrap()
+    }
 }
 
-impl Graphic for SdlGraphic {
+impl Api for SdlApi {
     fn clear(&mut self) {
         self.canvas.clear();
     }
@@ -97,7 +144,7 @@ impl Graphic for SdlGraphic {
 
     fn events(&mut self) -> Vec<Input> {
         let mut inputs = Vec::<Input>::new();
-        let mut event_pump = self.sdl_context.event_pump().unwrap();
+        let mut event_pump = self.context.event_pump().unwrap();
 
         // Events handling
         for event in event_pump.poll_iter() {
@@ -158,6 +205,16 @@ impl Graphic for SdlGraphic {
         self.window_size
     }
 
+}
+
+impl Audio for SdlApi {
+    fn resume_beep(&mut self) {
+        self.audio_device.resume();
+    }
+
+    fn pause_beep(&mut self) {
+        self.audio_device.pause();
+    }
 }
 
 impl From<Rectangle> for Rect {

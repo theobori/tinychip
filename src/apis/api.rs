@@ -1,26 +1,26 @@
 use std::str::FromStr;
 
 use crate::error::ChipError;
-use crate::models::graphic::Graphic;
+use crate::models::api::Api;
 use crate::apis::libs::{
-    sdl::SdlGraphic,
-    sfml::SfmlGraphic
+    sdl::SdlApi,
+    sfml::SfmlApi
 };
 
 /// Public available implemented apis
 #[derive(Debug, Clone, Copy)]
-pub enum Api {
+pub enum ApiKind {
     Sdl,
     Sfml
 }
 
-impl Default for Api {
+impl Default for ApiKind {
     fn default() -> Self {
         Self::Sdl
     }
 }
 
-impl FromStr for Api {
+impl FromStr for ApiKind {
     type Err = ChipError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -37,8 +37,8 @@ impl FromStr for Api {
 }
 
 pub struct GraphicProp {
-    /// Api type
-    pub api: Api,
+    /// ApiKind type
+    pub api: ApiKind,
     /// Window title
     pub title: String,
     /// Window size
@@ -61,13 +61,13 @@ pub const RECTS_X: u32 = 64;
 /// Y-axis
 pub const RECTS_Y: u32 = 32;
 
-impl From<GraphicProp> for Box<dyn Graphic> {
+impl From<GraphicProp> for Box<dyn Api> {
     fn from(prop: GraphicProp) -> Self {
         let (w, h) = prop.size;
 
         match prop.api {
-            Api::Sdl => Box::new(SdlGraphic::new(prop.title, w, h)),
-            Api::Sfml => Box::new(SfmlGraphic::new(prop.title, w, h))
+            ApiKind::Sdl => Box::new(SdlApi::new(prop.title, w, h)),
+            ApiKind::Sfml => Box::new(SfmlApi::new(prop.title, w, h))
         }
     }
 }

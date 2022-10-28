@@ -9,12 +9,12 @@ use std::{
 use crate::interpreters::interpreter::ChipInterpreter;
 use crate::models::{
     core::Core,
-    graphic::Graphic,
+    api::Api,
     interpreter::Interpreter
 };
 use crate::apis::api::{
     GraphicProp,
-    Api,
+    ApiKind,
     WINDOW_MIN_W,
     WINDOW_MIN_H
 };
@@ -28,7 +28,7 @@ impl Default for EmulatorBuilder {
     fn default() -> Self {
         Self {
             api_prop: GraphicProp {
-                api: Api::Sdl,
+                api: ApiKind::Sdl,
                 title: String::from("chip8"),
                 size: (WINDOW_MIN_W, WINDOW_MIN_H)
             },
@@ -51,7 +51,7 @@ impl EmulatorBuilder {
     }
 
     /// Set the api type
-    pub fn set_api(mut self, api_type: Api) -> Self {
+    pub fn set_api(mut self, api_type: ApiKind) -> Self {
         self.api_prop.api = api_type;
 
         self
@@ -103,7 +103,7 @@ pub struct Emulator {
     /// Chip8 interpreter
     interpreter: Box<dyn Interpreter>,
     /// Graphical API
-    api: Box<dyn Graphic>,
+    api: Box<dyn Api>,
     /// Cycles per second (hz)
     pub clock: u64
 }
@@ -185,6 +185,12 @@ impl Core for Emulator {
                     win_size = self.api.window_size();
                 }
                 self.api.display();
+            }
+
+            if self.interpreter.beep() == true {
+                self.api.resume_beep();
+            } else {
+                self.api.pause_beep();
             }
 
             thread::sleep(dur);

@@ -1,5 +1,5 @@
 use crate::{
-    models::graphic::Graphic,
+    models::{api::Api, audio::Audio},
     event::{
         Input
     },
@@ -9,17 +9,17 @@ use crate::{
     }
 };
 
-pub struct SfmlGraphic {
+pub struct SfmlApi {
 
 }
 
-impl SfmlGraphic {
+impl SfmlApi {
     pub fn new(_title: String, _w: u32, _h: u32) -> Self {
         todo!()
     }
 }
 
-impl Graphic for SfmlGraphic {
+impl Api for SfmlApi {
     fn clear(&mut self) {
         todo!()
     }
@@ -41,6 +41,16 @@ impl Graphic for SfmlGraphic {
     }
 
     fn window_size(&self) -> (u32, u32) {
+        todo!()
+    }
+}
+
+impl Audio for SfmlApi {
+    fn resume_beep(&mut self) {
+        todo!()
+    }
+
+    fn pause_beep(&mut self) {
         todo!()
     }
 }

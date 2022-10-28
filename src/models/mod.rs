@@ -4,9 +4,11 @@
 pub mod memory;
 /// Kernel
 pub mod core;
-/// Graphic API
-pub mod graphic;
+/// Api API
+pub mod api;
 /// Interpreter
 pub mod interpreter;
-/// CHIP8 instructions
+/// Chip8 instructions
 pub mod instructions;
+/// Audio controller
+pub mod audio;

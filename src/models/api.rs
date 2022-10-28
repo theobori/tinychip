@@ -5,7 +5,9 @@ use crate::properties::{
 
 use crate::event::Input;
 
-pub trait Graphic {
+use super::audio::Audio;
+
+pub trait Api: Audio {
     /// Clear the screen
     fn clear(&mut self);
     /// Draw a rectangle at the screen

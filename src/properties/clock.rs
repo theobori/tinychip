@@ -9,16 +9,16 @@ pub enum ClockState {
 /// Easier way to manage time
 #[derive(Clone, Copy)]
 pub struct Clock {
-    /// Milliseconds duration
+    /// micros duration
     pub cooldown: time::Duration,
     /// Couting milliseconds
     pub instant: time::Instant
 }
 
 impl Clock {
-    pub fn new(millis: u64) -> Self {
+    pub fn new(micros: u64) -> Self {
         Self {
-            cooldown: time::Duration::from_micros(millis),
+            cooldown: time::Duration::from_micros(micros),
             instant: time::Instant::now()
         }
     }

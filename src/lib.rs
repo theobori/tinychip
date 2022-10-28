@@ -8,7 +8,7 @@ pub mod properties;
 pub mod emulator;
 /// Errors
 pub mod error;
-/// Graphic API(s) implementations
+/// Api API(s) implementations
 pub mod apis;
 /// Interpreters implementations
 pub mod interpreters;

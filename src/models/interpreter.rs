@@ -4,7 +4,7 @@ use crate::{
         instructions::Instructions
     },
     event::Input,
-    properties::vram::Vram
+    properties::{vram::Vram, clock::Clock}
 };
 
 /// Parse and interprets the raw byte instructions
