@@ -17,7 +17,7 @@ use tinychip::{
 };
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "chip8")]
+#[structopt(name = "tinychip")]
 struct Opt {
     /// Input file
     #[structopt(parse(from_os_str))]

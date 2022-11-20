@@ -9,6 +9,7 @@ We consider an instruction ~= 1 cycle, so 500hz means it executes 500 instructio
 
 1. Install the dependencies
     - `cargo`
+    - `SDL2` (as library)
 2. Compile and install it
     - `cargo install --path .`
 3. Run `tinychip --help`
