@@ -1,11 +1,11 @@
-# tinychip
+# ❇️ tinychip
 
 *CHIP-8 is an interpreted programming language, developed by Joseph Weisbecker made on his 1802 Microprocessor. It was initially used on the COSMAC VIP and Telmac 1800 8-bit microcomputers in the mid-1970s.* - *[Wikipedia](https://en.wikipedia.org/wiki/CHIP-8)*
 
 It is able to supports multiple graphical APIs and multiple interpreter implementations.
 We consider an instruction ~= 1 cycle, so 500hz means it executes 500 instructions per second.
 
-## How to build and run ?
+## 📖 How to build and run ?
 
 1. Install the dependencies
     - `cargo`
@@ -14,7 +14,7 @@ We consider an instruction ~= 1 cycle, so 500hz means it executes 500 instructio
     - `cargo install --path .`
 3. Run `tinychip --help`
 
-## Tested programs
+## 👍 Tested programs
 
 Name           | Status
 -------------  | :-------------:
@@ -23,7 +23,7 @@ Pong | ✅
 Space invaders | ✅
 Tetris | ✅
 
-## Screenshots
+## 🖼️ Screenshots
 
 #### Breakout (320x160 - 500hz)
 ![breakout](img/breakout_320_160.png)
@@ -34,7 +34,7 @@ Tetris | ✅
 #### IBM logo (640x320 - 500hz)
 ![ibm_logo](img/ibm_logo_640_320.png)
 
-## Corresponding hotkeys
+## ⌨️ Corresponding hotkeys
 
 |   |   |   |   |
 |---|---|---|---|
@@ -43,7 +43,7 @@ Tetris | ✅
 | **Q** | **S** | **D** | **F** |
 | **W** | **X** | **C** | **V** |
 
-## Compatibility
+## 🔗 Compatibility
 
 Some descriptions of the chip8 instructions differ depending on the machine. For example, the instructions `8xy6` and `8xye` do not do the same thing according to the documents.
 
@@ -66,7 +66,7 @@ Opcode | Default | Original
 
 Some games where we know the best compatibility settings, [Github issue](https://github.com/Diesel-Net/kiwi-8/issues/9).
 
-## Help
+## ℹ️ CLI help
 
 ```
 USAGE:
@@ -89,7 +89,34 @@ ARGS:
     <rom>    Input file
 ```
 
-## Todo
+## 🐋 Docker playground
+
+#### 🔨 Build
+
+```bash
+docker build -t tinychip .
+```
+#### 🎉 Run
+
+In the example below, we have:
+
+- `X11` as graphic server
+- `PulseAudio` as sound server
+
+```bash
+docker run -it \
+    -e DISPLAY=$DISPLAY \
+    -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -v /dev/dri:/dev/dri \
+    -v /dev/snd:/dev/snd \
+    -v $PWD/roms:/roms \
+    -v /run/user/$(id -u)/pulse/native:/run/user/$(id -u)/pulse/native \
+    -e PULSE_SERVER=unix:/run/user/$(id -u)/pulse/native \
+    -u $(id -u):$(id -u) \
+    tinychip /roms/brick.ch8
+```
+
+## ✅ Todo
 
 Name           | Status
 -------------  | :-------------:
@@ -113,6 +140,6 @@ Add beep sound | ✅
 * Show interpreter values like registers, pc, keys, etc..
 * Switch between a limited amount of stored emulation state
 
-## Documentation
+## ℹ️ Documentation
 
 Run `cargo doc --open` to read the documentation in the browser.
