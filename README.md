@@ -96,7 +96,7 @@ ARGS:
 ```bash
 docker build -t tinychip .
 ```
-#### 🎉 Run
+#### 🎉 Run example
 
 In the example below, we have:
 
