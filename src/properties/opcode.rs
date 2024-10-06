@@ -4,14 +4,12 @@ use std::fmt::Debug;
 #[derive(Clone, Copy)]
 pub struct Opcode {
     /// The current 2 bytes code
-    pub value: u16
+    pub value: u16,
 }
 
 impl Opcode {
     pub fn new(value: u16) -> Self {
-        Self {
-            value
-        }
+        Self { value }
     }
 
     // Conventional arguments
@@ -44,9 +42,7 @@ impl Opcode {
 
 impl From<u16> for Opcode {
     fn from(value: u16) -> Self {
-        Self {
-            value
-        }
+        Self { value }
     }
 }
 
@@ -56,7 +52,7 @@ impl From<Opcode> for (u8, u8, u8, u8) {
             (opcode.value >> 12) as u8,
             opcode.x(),
             opcode.y(),
-            opcode.n()
+            opcode.n(),
         )
     }
 }
@@ -64,10 +60,7 @@ impl From<Opcode> for (u8, u8, u8, u8) {
 impl Debug for Opcode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let (first, x, y, n) = (*self).into();
-        let ret = format!(
-            "{:#04x} {:#04x} {:#04x} {:#04x}",
-            first, x, y, n
-        );
+        let ret = format!("{:#04x} {:#04x} {:#04x} {:#04x}", first, x, y, n);
 
         f.write_str(&ret)?;
 

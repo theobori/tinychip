@@ -1,19 +1,12 @@
-use structopt::StructOpt;
 use std::path::PathBuf;
+use structopt::StructOpt;
 
 use tinychip::{
+    apis::api::{ApiKind, RECTS_X, RECTS_Y},
     emulator::EmulatorBuilder,
-    apis::api::{
-        ApiKind,
-        RECTS_X,
-        RECTS_Y
-    },
+    error::ChipError,
     interpreters::types::InterpreterType,
-    models::{
-        core::Core,
-        interpreter::Interpreter
-    },
-    error::ChipError
+    models::{core::Core, interpreter::Interpreter},
 };
 
 #[derive(StructOpt, Debug)]
@@ -42,7 +35,7 @@ struct Opt {
     original_load: Option<bool>,
     /// use the original semantic for 8xy6, 8xye
     #[structopt(long)]
-    original_shift: Option<bool>
+    original_shift: Option<bool>,
 }
 
 impl Opt {

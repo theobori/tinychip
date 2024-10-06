@@ -1,16 +1,13 @@
 use std::str::FromStr;
 
-use crate::{
-    error::ChipError,
-    models::interpreter::Interpreter
-};
+use crate::{error::ChipError, models::interpreter::Interpreter};
 
 use crate::interpreters::interpreter::ChipInterpreter;
 
 /// Intepreter type
 #[derive(Debug, Clone, Copy)]
 pub enum InterpreterType {
-    Original
+    Original,
 }
 
 impl Default for InterpreterType {
@@ -37,7 +34,7 @@ impl FromStr for InterpreterType {
 impl From<InterpreterType> for Box<dyn Interpreter> {
     fn from(it: InterpreterType) -> Self {
         match it {
-            InterpreterType::Original => Box::new(ChipInterpreter::new())
+            InterpreterType::Original => Box::new(ChipInterpreter::new()),
         }
     }
 }

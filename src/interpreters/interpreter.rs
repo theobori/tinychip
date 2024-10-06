@@ -1,16 +1,10 @@
 use rand::Rng;
 
 use crate::{
-    models::{
-        interpreter::Interpreter,
-        instructions::Instructions, memory::Memory
-    },
+    apis::api::{RECTS_X, RECTS_Y},
     event::Input,
-    properties::{
-        opcode::Opcode,
-        vram::Vram, clock::Clock
-    },
-    apis::api::{RECTS_X, RECTS_Y}
+    models::{instructions::Instructions, interpreter::Interpreter, memory::Memory},
+    properties::{clock::Clock, opcode::Opcode, vram::Vram},
 };
 
 use crate::interpreters::pc::ProgramCount;
@@ -34,20 +28,20 @@ const FONT: [u8; 5 * 16] = [
     0xf0, 0x80, 0x80, 0x80, 0xf0, // C
     0xE0, 0x90, 0x90, 0x90, 0xE0, // D
     0xf0, 0x80, 0xf0, 0x80, 0xf0, // E
-    0xf0, 0x80, 0xf0, 0x80, 0x80  // F
+    0xf0, 0x80, 0xf0, 0x80, 0x80, // F
 ];
 
 /// Interpreter state
 #[derive(Debug, PartialEq)]
 pub enum InterpreterState {
     Running,
-    WaitForKey
+    WaitForKey,
 }
 
 /// First chip8 interpreter
 pub struct ChipInterpreter {
     /// Memory
-    /// 
+    ///
     /// 0x000-0x1ff - Chip 8 interpreter
     /// 0x050-0x0a0 - Used for the built in 4x5 pixel font set (0-f)
     /// 0x200-0x0fff - Program ROM and RAM
@@ -81,8 +75,7 @@ pub struct ChipInterpreter {
     /// Shift semantic
     original_shift: bool,
     /// Timers clock
-    timers_clock: Clock
-
+    timers_clock: Clock,
 }
 
 impl Default for ChipInterpreter {
@@ -103,7 +96,7 @@ impl Default for ChipInterpreter {
             display: false,
             original_load: false,
             original_shift: false,
-            timers_clock: Clock::new(1_000_000 / 60)
+            timers_clock: Clock::new(1_000_000 / 60),
         }
     }
 }
@@ -146,7 +139,7 @@ impl ChipInterpreter {
     }
 
     /// Assign keyboard hotkeys to the CHIP8 hotkeys
-    fn assign_keys(&mut self, keys: Vec::<usize>) {
+    fn assign_keys(&mut self, keys: Vec<usize>) {
         for index in keys {
             self.key[index] = 1;
         }
@@ -154,7 +147,7 @@ impl ChipInterpreter {
 
     fn timers_tick(&mut self) {
         if self.timers_clock.try_reset() == false {
-            return
+            return;
         }
 
         if self.delay_timer > 0 {
@@ -188,7 +181,7 @@ impl Instructions for ChipInterpreter {
         self.jp();
     }
 
-    fn cls(&mut self) {    
+    fn cls(&mut self) {
         self.vram.clear();
 
         self.display = true;
@@ -197,7 +190,7 @@ impl Instructions for ChipInterpreter {
     fn ret(&mut self) {
         self.sp -= 1;
         let state = ProgramCountState::Jump(self.stack[self.sp as usize]);
-        
+
         self.pc.set_state(state);
     }
 
@@ -209,9 +202,9 @@ impl Instructions for ChipInterpreter {
 
     fn call(&mut self) {
         self.stack[self.sp as usize] = self.pc.value + OPCODE_SIZE;
-        
+
         let state = ProgramCountState::Jump(self.opcode.nnn());
-    
+
         self.pc.set_state(state);
         self.sp += 1;
     }
@@ -273,7 +266,7 @@ impl Instructions for ChipInterpreter {
     fn sub_vx_vy(&mut self) {
         let vx = self.vx();
         let vy = self.vy();
-    
+
         self.v[0x0f] = (vx > vy) as u8;
         self.set_vx(vx.wrapping_sub(vy));
     }
@@ -299,7 +292,7 @@ impl Instructions for ChipInterpreter {
     fn subn_vx_vy(&mut self) {
         let vx = self.vx();
         let vy = self.vy();
-        
+
         self.v[0x0f] = (vy > vx) as u8;
         self.set_vx(vy.wrapping_sub(vx));
     }
@@ -350,12 +343,12 @@ impl Instructions for ChipInterpreter {
         for byte in 0..(self.opcode.n() as usize) {
             let y = (self.vy() as usize + byte) % RECTS_Y as usize;
             let value = self.read_byte(self.i as usize + byte);
-    
+
             for bit in 0..8 {
                 let x = (self.vx() as usize + bit) % RECTS_X as usize;
                 let color = value >> (7 - bit) & 1;
                 let vram_byte = self.vram.get(x, y);
-        
+
                 self.v[0x0f] |= color & vram_byte;
                 self.vram.put(x, y, vram_byte ^ color);
             }
@@ -413,7 +406,7 @@ impl Instructions for ChipInterpreter {
         if self.original_load == true {
             return self.ld_i_vx_original();
         }
-    
+
         let bytes = self.v[0..=(self.opcode.x() as usize)].to_vec();
 
         self.write_any(bytes, self.i as usize);
@@ -451,13 +444,13 @@ impl Interpreter for ChipInterpreter {
         self.vram.clone()
     }
 
-    fn step(&mut self, inputs: Vec::<Input>) -> bool{
+    fn step(&mut self, inputs: Vec<Input>) -> bool {
         let keys = Input::to_keys(inputs);
 
         // Reset the program counter and screen display
         self.pc.reset_state();
         self.display = false;
-        
+
         // Hotkeys handling
         self.reset_keys();
         self.assign_keys(keys.clone());
@@ -520,11 +513,11 @@ impl Interpreter for ChipInterpreter {
 
         // Update the program counter
         self.pc.step();
-        
+
         self.display
     }
 
-    fn load_program(&mut self, program: Vec::<u8>) {
+    fn load_program(&mut self, program: Vec<u8>) {
         self.write_any(program, 0x200);
     }
 

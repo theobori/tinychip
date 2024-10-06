@@ -1,26 +1,19 @@
-use crate::apis::api::{
-    RECTS_X,
-    RECTS_Y
-};
+use crate::apis::api::{RECTS_X, RECTS_Y};
 
 /// Manage the display memory as a matrice
 #[derive(Clone)]
 pub struct Vram {
     /// Array
-    value: Vec::<u8>,
+    value: Vec<u8>,
     /// Width
     w: usize,
     /// Height
-    h: usize
+    h: usize,
 }
 
 impl Default for Vram {
     fn default() -> Self {
-        Self::new(
-            RECTS_X as usize,
-            RECTS_Y as usize,
-            0
-        )
+        Self::new(RECTS_X as usize, RECTS_Y as usize, 0)
     }
 }
 
@@ -29,7 +22,7 @@ impl Vram {
         Self {
             value: vec![byte; w * h],
             w,
-            h
+            h,
         }
     }
 
@@ -41,7 +34,7 @@ impl Vram {
     }
 
     /// Get the value
-    pub fn value(&self) -> Vec::<u8> {
+    pub fn value(&self) -> Vec<u8> {
         self.value.clone()
     }
 

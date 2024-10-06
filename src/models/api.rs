@@ -1,7 +1,4 @@
-use crate::properties::{
-    rectangle::Rectangle,
-    color::Color,
-};
+use crate::properties::{color::Color, rectangle::Rectangle};
 
 use crate::event::Input;
 

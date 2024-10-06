@@ -1,38 +1,25 @@
-use sdl2::Sdl;
-use sdl2::mouse::MouseButton;
-use sdl2::video::Window;
-use sdl2::{pixels::Color, render::Canvas, rect::Rect};
+use sdl2::audio::{AudioCallback, AudioDevice, AudioSpecDesired};
 use sdl2::event::{Event, WindowEvent};
 use sdl2::keyboard::Keycode;
-use sdl2::audio::{AudioCallback, AudioSpecDesired, AudioDevice};
+use sdl2::mouse::MouseButton;
+use sdl2::video::Window;
+use sdl2::Sdl;
+use sdl2::{pixels::Color, rect::Rect, render::Canvas};
 
 use std::collections::HashMap;
 
 use crate::models::audio::Audio;
 use crate::{
+    apis::api::{WINDOW_MAX_H, WINDOW_MAX_W, WINDOW_MIN_H, WINDOW_MIN_W},
+    event::{Hotkey, Input, Mouse, MouseClick},
     models::api::Api,
-    event::{
-        Hotkey,
-        MouseClick,
-        Mouse,
-        Input
-    },
-    properties::{
-        rectangle::Rectangle,
-        color
-    },
-    apis::api::{
-        WINDOW_MAX_H,
-        WINDOW_MAX_W,
-        WINDOW_MIN_H,
-        WINDOW_MIN_W
-    }
+    properties::{color, rectangle::Rectangle},
 };
 
 struct SquareWave {
     phase_inc: f32,
     phase: f32,
-    volume: f32
+    volume: f32,
 }
 
 impl AudioCallback for SquareWave {
@@ -64,40 +51,38 @@ pub struct SdlApi {
     /// Used to handle multiple pressed keys continously
     key_pressed: HashMap<sdl2::keyboard::Keycode, bool>,
     /// Window size
-    window_size: (u32, u32)
+    window_size: (u32, u32),
 }
 
 impl SdlApi {
     pub fn new(title: String, w: u32, h: u32) -> Self {
         let context = sdl2::init().unwrap();
         let video_subsystem = context.video().unwrap();
-        
+
         // Init window
-        let mut window = video_subsystem.window(&title, w, h)
+        let mut window = video_subsystem
+            .window(&title, w, h)
             .position_centered()
             .resizable()
             .build()
             .unwrap();
-        
+
         // Set window size limits
         window.set_minimum_size(WINDOW_MIN_W, WINDOW_MIN_H).unwrap();
         window.set_maximum_size(WINDOW_MAX_W, WINDOW_MAX_H).unwrap();
-    
-        let canvas = window
-            .into_canvas()
-            .build()
-            .unwrap();
-        
+
+        let canvas = window.into_canvas().build().unwrap();
+
         let window_size = canvas.window().size();
         let audio_device = SdlApi::build_audio(&context);
-    
+
         Self {
             context,
             audio_device,
             canvas,
             is_open: true,
             key_pressed: HashMap::new(),
-            window_size
+            window_size,
         }
     }
 
@@ -107,18 +92,20 @@ impl SdlApi {
 
         let desired_spec = AudioSpecDesired {
             freq: Some(44100),
-            channels: Some(1),  // mono
-            samples: None       // default sample size
+            channels: Some(1), // mono
+            samples: None,     // default sample size
         };
 
-        audio_subsystem.open_playback(None, &desired_spec, |spec| {
-            // initialize the audio callback
-            SquareWave {
-                phase_inc: 440.0 / spec.freq as f32,
-                phase: 0.0,
-                volume: 0.25
-            }
-        }).unwrap()
+        audio_subsystem
+            .open_playback(None, &desired_spec, |spec| {
+                // initialize the audio callback
+                SquareWave {
+                    phase_inc: 440.0 / spec.freq as f32,
+                    phase: 0.0,
+                    volume: 0.25,
+                }
+            })
+            .unwrap()
     }
 }
 
@@ -154,36 +141,32 @@ impl Api for SdlApi {
                 // Hotkeys pressed
                 Event::KeyDown { keycode, .. } => {
                     if keycode.is_some() {
-                        self.key_pressed.insert(
-                            keycode.unwrap(),
-                            true
-                        );
+                        self.key_pressed.insert(keycode.unwrap(), true);
                     }
-                },
+                }
 
                 // Hotkeys released
                 Event::KeyUp { keycode, .. } => {
                     if keycode.is_some() {
-                        self.key_pressed.insert(
-                            keycode.unwrap(),
-                            false
-                        );
+                        self.key_pressed.insert(keycode.unwrap(), false);
                     }
-                },
+                }
 
                 // Handle the window events
                 Event::Window { win_event, .. } => {
                     if let WindowEvent::Resized(w, h) = win_event {
                         self.window_size = (w as u32, h as u32);
                     }
-                },
+                }
 
                 // Mouse buttons
-                Event::MouseButtonDown { mouse_btn, x, y, .. } => {
+                Event::MouseButtonDown {
+                    mouse_btn, x, y, ..
+                } => {
                     let mouse = Mouse::new(mouse_btn, x, y);
 
                     inputs.push(Input::Mouse(mouse));
-                },
+                }
 
                 _ => {}
             }
@@ -193,7 +176,7 @@ impl Api for SdlApi {
         for kp in self.key_pressed.iter() {
             if *kp.1 == true {
                 let hotkey = Hotkey::from(*kp.0);
-    
+
                 inputs.push(Input::Hotkey(hotkey));
             }
         }
@@ -204,7 +187,6 @@ impl Api for SdlApi {
     fn window_size(&self) -> (u32, u32) {
         self.window_size
     }
-
 }
 
 impl Audio for SdlApi {

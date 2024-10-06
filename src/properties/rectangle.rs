@@ -8,12 +8,12 @@ pub struct Rectangle {
     /// Width
     pub w: u32,
     /// Height
-    pub h: u32
+    pub h: u32,
 }
 
 impl From<(i32, i32, u32, u32)> for Rectangle {
     fn from((x, y, w, h): (i32, i32, u32, u32)) -> Self {
-        Self {x, y, w, h}
+        Self { x, y, w, h }
     }
 }
 
