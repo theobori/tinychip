@@ -11,5 +11,5 @@ pub enum ChipError {
     #[error("Unable to use this interpreter")]
     UseIntepreter,
     #[error("Unknown error")]
-    Unknown
+    Unknown,
 }

@@ -1,17 +1,10 @@
 use crate::{
+    event::Input,
     models::{api::Api, audio::Audio},
-    event::{
-        Input
-    },
-    properties::{
-        rectangle::Rectangle,
-        color::Color
-    }
+    properties::{color::Color, rectangle::Rectangle},
 };
 
-pub struct SfmlApi {
-
-}
+pub struct SfmlApi {}
 
 impl SfmlApi {
     pub fn new(_title: String, _w: u32, _h: u32) -> Self {

@@ -1,9 +1,9 @@
-use std::{time};
+use std::time;
 
 /// The clock timer state
 pub enum ClockState {
     Finish,
-    Progress
+    Progress,
 }
 
 /// Easier way to manage time
@@ -12,14 +12,14 @@ pub struct Clock {
     /// micros duration
     pub cooldown: time::Duration,
     /// Couting milliseconds
-    pub instant: time::Instant
+    pub instant: time::Instant,
 }
 
 impl Clock {
     pub fn new(micros: u64) -> Self {
         Self {
             cooldown: time::Duration::from_micros(micros),
-            instant: time::Instant::now()
+            instant: time::Instant::now(),
         }
     }
 

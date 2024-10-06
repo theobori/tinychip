@@ -235,7 +235,7 @@ pub enum Hotkey {
     KbdIllumUp,
     Eject,
     Sleep,
-    AcBookmarks
+    AcBookmarks,
 }
 
 /// Crate enum for the pressed mouse buttons
@@ -244,7 +244,7 @@ pub enum MouseClick {
     Left,
     Middle,
     Right,
-    Unknown
+    Unknown,
 }
 
 /// Mouse down button with coordinates
@@ -255,12 +255,16 @@ pub struct Mouse {
     /// x-axis
     pub x: i32,
     /// y-axis
-    pub y: i32
+    pub y: i32,
 }
 
 impl Mouse {
     pub fn new<T: Into<MouseClick>>(click: T, x: i32, y: i32) -> Self {
-        Self { click: click.into(), x, y }
+        Self {
+            click: click.into(),
+            x,
+            y,
+        }
     }
 }
 
@@ -268,7 +272,7 @@ impl Mouse {
 #[derive(Debug, Clone, Copy)]
 pub enum Input {
     Hotkey(Hotkey),
-    Mouse(Mouse)
+    Mouse(Mouse),
 }
 
 impl From<Input> for Option<usize> {
@@ -287,21 +291,21 @@ impl From<Input> for Option<usize> {
                     Hotkey::Z => 0x05,
                     Hotkey::E => 0x06,
                     Hotkey::R => 0x0d,
-                    
+
                     // Line 3
                     Hotkey::Q => 0x07,
                     Hotkey::S => 0x08,
                     Hotkey::D => 0x09,
                     Hotkey::F => 0x0e,
-                    
+
                     // Line 4
                     Hotkey::W => 0x0a,
                     Hotkey::X => 0x00,
                     Hotkey::C => 0x0b,
                     Hotkey::V => 0x0f,
-                    _ => return None
+                    _ => return None,
                 }
-            },
+            }
             Input::Mouse(_) => return None,
         };
 
@@ -320,6 +324,6 @@ impl Input {
             }
         }
 
-        ret 
+        ret
     }
 }

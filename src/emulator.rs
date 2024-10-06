@@ -1,28 +1,10 @@
-use std::{
-    fs::File,
-    path::Path,
-    io::Read,
-    thread,
-    time
-};
+use std::{fs::File, io::Read, path::Path, thread, time};
 
-use crate::interpreters::interpreter::ChipInterpreter;
-use crate::models::{
-    core::Core,
-    api::Api,
-    interpreter::Interpreter
-};
-use crate::apis::api::{
-    GraphicProp,
-    ApiKind,
-    WINDOW_MIN_W,
-    WINDOW_MIN_H
-};
+use crate::apis::api::{ApiKind, GraphicProp, WINDOW_MIN_H, WINDOW_MIN_W};
 use crate::error::ChipError;
-use crate::properties::{
-    color::ColorPreset,
-    rectangle::Rectangle
-};
+use crate::interpreters::interpreter::ChipInterpreter;
+use crate::models::{api::Api, core::Core, interpreter::Interpreter};
+use crate::properties::{color::ColorPreset, rectangle::Rectangle};
 
 impl Default for EmulatorBuilder {
     fn default() -> Self {
@@ -30,10 +12,10 @@ impl Default for EmulatorBuilder {
             api_prop: GraphicProp {
                 api: ApiKind::Sdl,
                 title: String::from("chip8"),
-                size: (WINDOW_MIN_W, WINDOW_MIN_H)
+                size: (WINDOW_MIN_W, WINDOW_MIN_H),
             },
             interpreter: Box::new(ChipInterpreter::new()),
-            clock: 500
+            clock: 500,
         }
     }
 }
@@ -42,7 +24,7 @@ impl Default for EmulatorBuilder {
 pub struct EmulatorBuilder {
     api_prop: GraphicProp,
     interpreter: Box<dyn Interpreter>,
-    clock: u64
+    clock: u64,
 }
 
 impl EmulatorBuilder {
@@ -72,10 +54,7 @@ impl EmulatorBuilder {
     }
 
     /// Set the interpreter
-    pub fn set_interpreter(
-        mut self,
-        interpreter: Box<dyn Interpreter>
-    ) -> Self {
+    pub fn set_interpreter(mut self, interpreter: Box<dyn Interpreter>) -> Self {
         self.interpreter = interpreter;
 
         self
@@ -93,7 +72,7 @@ impl EmulatorBuilder {
         Emulator {
             api: self.api_prop.into(),
             interpreter: self.interpreter,
-            clock: self.clock
+            clock: self.clock,
         }
     }
 }
@@ -105,7 +84,7 @@ pub struct Emulator {
     /// Graphical API
     api: Box<dyn Api>,
     /// Cycles per second (hz)
-    pub clock: u64
+    pub clock: u64,
 }
 
 impl Emulator {
@@ -115,11 +94,9 @@ impl Emulator {
     }
 
     /// Load a program from file
-    pub fn load_from_file<P: AsRef<Path>>(
-        &mut self, path: P
-    ) -> Result<(), ChipError> {
+    pub fn load_from_file<P: AsRef<Path>>(&mut self, path: P) -> Result<(), ChipError> {
         let f = File::open(path);
-        
+
         match f {
             Ok(mut file) => {
                 let mut data = Vec::<u8>::new();
@@ -130,10 +107,10 @@ impl Emulator {
 
                         Ok(())
                     }
-                    Err(e) => Err(ChipError::ReadFile(e.to_string()))
+                    Err(e) => Err(ChipError::ReadFile(e.to_string())),
                 }
-            },
-            Err(e) => Err(ChipError::ReadFile(e.to_string()))
+            }
+            Err(e) => Err(ChipError::ReadFile(e.to_string())),
         }
     }
 }
@@ -146,14 +123,14 @@ impl Core for Emulator {
         while self.api.is_window_open() == true {
             // Handling events + get keyboard / mouse inputs
             let inputs = self.api.events();
-        
+
             // The interpreter calls the current instruction
             let display = self.interpreter.step(inputs);
             let size_changed = self.api.window_size() != win_size;
-            
+
             if display == true || size_changed == true {
                 self.draw_vram();
-                
+
                 if size_changed {
                     win_size = self.api.window_size();
                 }
@@ -170,16 +147,13 @@ impl Core for Emulator {
     fn draw_vram(&mut self) {
         let vram = self.interpreter.vram();
         let wsize = self.api.window_size();
-        let (w, h) = (
-            wsize.0 as usize / vram.w(),
-            wsize.1 as usize / vram.h()
-        );
-        
+        let (w, h) = (wsize.0 as usize / vram.w(), wsize.1 as usize / vram.h());
+
         for (i, value) in vram.value().iter().enumerate() {
             // Rectangle size
             let x = ((i % vram.w()) * w) as i32;
             let y = ((i / vram.w()) * h) as i32;
-            
+
             // Rectangle properties
             let rect = Rectangle::from((x, y, w as u32, h as u32));
             let color = if value & 1 == 1 {

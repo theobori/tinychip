@@ -9,12 +9,18 @@ ENV DIRNAME tinychip
 
 WORKDIR ${DIRNAME}
 
+RUN groupadd rustgroup && \
+    useradd -m -g rustgroup tinychip
+
 # Copy files
-COPY . .
+COPY src src
+COPY Cargo.toml Cargo.toml
 
 # Build and Install the binary
 RUN cargo build --release && \
     cargo install --path . && \
     rm -rf /${DIRNAME}
+
+USER tinychip
 
 ENTRYPOINT [ "tinychip" ]

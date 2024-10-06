@@ -1,14 +1,14 @@
-/// Public traits
-pub mod models;
-/// key events
-pub mod event;
-/// Global structs that are used almost everywhere
-pub mod properties;
+/// Api API(s) implementations
+pub mod apis;
 /// Emulator
 pub mod emulator;
 /// Errors
 pub mod error;
-/// Api API(s) implementations
-pub mod apis;
+/// key events
+pub mod event;
 /// Interpreters implementations
 pub mod interpreters;
+/// Public traits
+pub mod models;
+/// Global structs that are used almost everywhere
+pub mod properties;

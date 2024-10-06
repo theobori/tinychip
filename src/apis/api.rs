@@ -1,17 +1,14 @@
 use std::str::FromStr;
 
+use crate::apis::libs::{sdl::SdlApi, sfml::SfmlApi};
 use crate::error::ChipError;
 use crate::models::api::Api;
-use crate::apis::libs::{
-    sdl::SdlApi,
-    sfml::SfmlApi
-};
 
 /// Public available implemented apis
 #[derive(Debug, Clone, Copy)]
 pub enum ApiKind {
     Sdl,
-    Sfml
+    Sfml,
 }
 
 impl Default for ApiKind {
@@ -67,7 +64,7 @@ impl From<GraphicProp> for Box<dyn Api> {
 
         match prop.api {
             ApiKind::Sdl => Box::new(SdlApi::new(prop.title, w, h)),
-            ApiKind::Sfml => Box::new(SfmlApi::new(prop.title, w, h))
+            ApiKind::Sfml => Box::new(SfmlApi::new(prop.title, w, h)),
         }
     }
 }

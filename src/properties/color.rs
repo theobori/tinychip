@@ -8,7 +8,7 @@ pub struct Color {
     /// Blue
     pub b: u8,
     /// Alpha
-    pub a: u8
+    pub a: u8,
 }
 
 /// Pre-defined colors
@@ -20,7 +20,7 @@ pub enum ColorPreset {
     White,
     Grey,
     Default,
-    None
+    None,
 }
 
 /// Convert a pre-defined color into Color

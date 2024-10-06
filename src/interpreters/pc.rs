@@ -2,7 +2,7 @@
 pub enum ProgramCountState {
     Next,
     Jump(u16),
-    Skip
+    Skip,
 }
 
 impl Default for ProgramCountState {
@@ -19,7 +19,7 @@ pub struct ProgramCount {
     /// Count
     pub value: u16,
     /// State
-    pub state: ProgramCountState
+    pub state: ProgramCountState,
 }
 
 impl ProgramCount {
@@ -27,12 +27,12 @@ impl ProgramCount {
     pub fn reset_state(&mut self) {
         self.state = ProgramCountState::default();
     }
-    
+
     /// Set the state
     pub fn set_state(&mut self, state: ProgramCountState) {
         self.state = state;
     }
-    
+
     /// Update
     pub fn step(&mut self) {
         match self.state {
@@ -47,7 +47,7 @@ impl From<u16> for ProgramCount {
     fn from(value: u16) -> Self {
         Self {
             value,
-            state: ProgramCountState::default()
+            state: ProgramCountState::default(),
         }
     }
 }
